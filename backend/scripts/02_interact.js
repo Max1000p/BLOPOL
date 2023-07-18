@@ -24,14 +24,14 @@ async function main() {
     const adAmount = await instance.getFees();
     console.log("Ad amount updated : " + adAmount);
     // Set reward duration : Duration of rewards to be paid out (in seconds)
-   // await instance.setRewardsDuration(10000);
+    await instance.setRewardsDuration(10000);
     // Transfer Token ownner mint when deployed contract (10 000 Blopol) to smartcontractAddress
     const blopolToken = await ethers.getContractFactory("TokenBlopol");
     const instanceToken = await blopolToken.attach(tokenblopoladdress);
     // console.log(instanceToken.interface);
     await instanceToken.mint(blopolAddress, 10000);  // Ne fonctionne pas
     const balanceBlopol = instanceToken.balanceOf(blopolAddress); // Ne fonctionne pas > Natif a l ERC20
-    console.log(balanceBlopol);
+    console.log('Balnce token blopol in smart contract ' + balanceBlopol.toString());
     //__TODO > Transfers des tokensBlopol vers le SmartContract
     
 }

@@ -47,8 +47,8 @@ contract('Blopol', accounts => {
 
             it("Owner account can set Duration", async () => {
                 await instance.setRewardsDuration(new BN(10000), {from: owner});
-                const storedData = await instance.getRewardsDuration({from: owner});
-                expect(storedData).to.be.bignumber.equal(new BN(10000));
+                const storedData = await instance.duration.call();
+                expect(storedData.toString()).to.be.equal(new BN(10000));
             });
 
             it("account who is not owner can't add category, revert", async () => {
@@ -91,6 +91,30 @@ contract('Blopol', accounts => {
                 it("user can't define reward rate -  call notifyRewardAmount", async () => {
                     await expectRevert(instance.notifyRewardAmount(new BN(10000), {from: second}), "Ownable: caller is not the owner");
                 });
+
+                
+                it("Owner can't define reward rate if amount / duration = 0", async () => {
+                    await expectRevert(instance.notifyRewardAmount(new BN(1000), {from: owner}), "reward rate = 0");
+                });
+                
+                it.skip("Owner can't define reward rate if rewardRate * duration <= token balance contract Blopol", async () => {
+                    await expectRevert(instance.notifyRewardAmount(new BN(9000000000000000), {from: owner}), "no gain");
+                });
+
+                it("Owner can define reward rate", async () => {
+                    await instance.notifyRewardAmount(new BN(9000000000000000), {from: owner});
+                    const storedData = await instance.rewardRate.call();
+                    expect(storedData.toString()).to.be.equal('900000000000');
+                });
+                
+                it("reward rate and duration set, finishAt must be set timestamp (set to updatedAt) + duration", async () => {
+                    const finishAt = new BN(await instance.finishAt.call());
+                    const updatedAt = new BN(await instance.updatedAt.call());
+                    const duration = new BN(await instance.duration.call());
+                    let sum = updatedAt.add(duration);
+                    expect(finishAt.toString()).to.be.equal(sum.toString());
+                });
+
 
             })
 

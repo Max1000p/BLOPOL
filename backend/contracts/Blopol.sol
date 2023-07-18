@@ -16,7 +16,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     IERC20 public immutable rewardsToken;
 
     /// @notice Duration of rewards to be paid out (in seconds)
-    uint duration;
+    uint public duration;
     /// @notice Timestamp of when the rewards finish
     uint public finishAt;
     //// @notice Minimum of last updated time and reward finish time
@@ -114,7 +114,6 @@ contract Blopol is Ownable, ReentrancyGuard {
 
     WithdrawAds[] public withdrawArray;
     
-
     ///@notice Control Address and check if identifier Ads exists
     modifier checkAdsRecord(uint _idAds){
         require(msg.sender != address(0), "Wrong address");
@@ -122,7 +121,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         _;
     }
 
-    /*-----------------------------------------------------------------------*/
     /// @notice Staking structure
     struct StakingToken {
         address walletAdAddress;
@@ -239,7 +237,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         
         emit AddReward(_idAds,_amountReward);
     }
-
 
     /// @notice Add a comment by user if ads exist
     /// @dev mapping helperAds to display all this comment for Ads in platform
@@ -607,8 +604,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         _updateReward(msg.sender, _idAd);
     }
 
-  
-
     ///@dev Math to give x or y by operator
     function _min(uint x, uint y) private pure returns (uint) {
         return x <= y ? x : y;
@@ -623,14 +618,16 @@ contract Blopol is Ownable, ReentrancyGuard {
         duration = _duration;
     }
 
-    /// @notice Getter duration reward amount per seconds
-    function getRewardsDuration() external onlyOwner view returns(uint) {
-        return duration;
-    }
-
-    /// @notice initilise rate for staking
+    /// @notice Send reward Token in smartcontract and set the reward rate
+    /// @notice Two case if create reward duration is expired or not
+    /// @notice if expired or not started, reward rate = amount to be paid / duration
+    /// @notice else we caclul remaining rewards and reqjust rewardRate / duration
     /// @dev init timestamp updated and finishAt
+    /// @dev Need to set duration reward per seconds if not can't divise by 0
+    /// @dev Balance Token on Smart Contract need to be equal or greater than amount 
+    /// @param _amount need to be in 10**18
     function notifyRewardAmount(uint _amount) external onlyOwner {
+        require(duration > 0, "Need to set duration first");
         _updateReward(address(0), 0);
         if (block.timestamp >= finishAt) {
             rewardRate = _amount / duration;
