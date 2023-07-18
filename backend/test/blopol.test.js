@@ -11,6 +11,12 @@ contract('Blopol', accounts => {
     const four = accounts[3];
 
     let instance, erc20instance;
+    /** Constantes for Ads */
+    const ads = {idAds:0,ownerAds:"0x90F79bf6EB2c4f870365E785982E1f101E93b906",depositAds: 11689258304,
+                        titleAds:"Montre Rollex volee",idcatAds:0,geolocAds:"48.8588897,2.320041"};
+    const cads = {idAdsC:0,dateAndTimeAds:11689258900,complaintAds:0,productNameAds:"Rollex Or",estimatedValueAds:"2000$",
+                        serialNumberAds:"xxxxxx",contentAds:"Vole en vacance au bord de la mer"};
+    const rwd = {idAds:0,amountReward:12255565200000};
 
 
     describe("Blopol - Smart Contract test Unit", function () {
@@ -97,8 +103,8 @@ contract('Blopol', accounts => {
                     await expectRevert(instance.notifyRewardAmount(new BN(1000), {from: owner}), "reward rate = 0");
                 });
                 
-                it.skip("Owner can't define reward rate if rewardRate * duration <= token balance contract Blopol", async () => {
-                    await expectRevert(instance.notifyRewardAmount(new BN(9000000000000000), {from: owner}), "no gain");
+                it("Owner can't define reward rate if rewardRate * duration <= token balance contract Blopol", async () => {
+                    await expectRevert(instance.notifyRewardAmount(new BN("110000000000000000000000", 10), {from: owner}), "reward amount > balance");
                 });
 
                 it("Owner can define reward rate", async () => {
@@ -128,24 +134,51 @@ contract('Blopol', accounts => {
                 
                 it("Give minimum price for fees platform and reward helpers, result not be 0", async () => {
                     const px = await instance.displayAmountForDepositAd();
-                    console.log(px.toString());
                     expect(px.toString()).to.not.equal(new BN(0));
                 });
             })    
 
             context("Deposit AD, check minimum price, stake token", function () {
-                
-                it("User can't deposit Ad if payment minimal amount is not reach", async () => {
-                    const amount = 12255565200000;
-                    const ads = {idAds:0,ownerAds:"0x90F79bf6EB2c4f870365E785982E1f101E93b906",depositAds: 11689258304,
-                                 titleAds:"Montre Rollex volee",idcatAds:0,geolocAds:"48.8588897,2.320041"};
-                    const cads = {idAdsC:0,dateAndTimeAds:11689258900,complaintAds:0,productNameAds:"Rollex Or",estimatedValueAds:"2000$",
-                                  serialNumberAds:"xxxxxx",contentAds:"Vole en vacance au bord de la mer"};
-                    const img = {idImageAds:0,linkImage:"https://gateway.pinata.cloud/ipfs/QmUZYwvQBHarZq69WukmhiotRmKVwszEPGeqSeUH6m6abg"};
-                    const rwd = {idAds:0,amountReward:12255565200000};
 
-                    await expectRevert(instance.paymentAds(ads,cads,img,rwd, {from: third}), "Price minimum required");
+                it("User can't deposit Ad if payment minimal amount is not reach", async () => {
+                    await expectRevert(instance.paymentAds(ads,cads,rwd, {from: third, value: new BN(1000)}), "Price minimum required");
                 });
+
+                it("User deposit Ad with minimum payment, get Event PaymentReceived", async () => {
+                    const pxmini = await instance.displayAmountForDepositAd();
+                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: third, value: new BN("830000000000000000000", 10)});
+                    expectEvent(findEvent,"PaymentReceived");
+                });
+
+                it("User deposit Ad with minimum payment, get Event CreateAds", async () => {
+                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: third, value: new BN("830000000000000000000", 10)});
+                    expectEvent(findEvent,"CreateAds");
+                    const storedData = await instance.counterId.call();
+                    console.log(storedData);
+                });
+
+                it("User deposit Ad with minimum payment, get Event CreateContentAds", async () => {
+                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: second, value: new BN("830000000000000000000", 10)});
+                    expectEvent(findEvent,"CreateContentAds");
+                    const storedData = await instance.counterId.call();
+                    console.log(storedData);
+                });
+
+                it("User deposit Ad with minimum payment, get Event AddReward", async () => {
+                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: second, value: new BN("830000000000000000000", 10)});
+                    expectEvent(findEvent,"AddReward");
+                    const storedData = await instance.counterId.call();
+                    console.log(storedData);
+                });
+
+                /*
+                it("counterId Ads auto increment when adding new Ads", async () => {
+                    await instance.paymentAds(ads,cads,rwd, {from: second, value: new BN("830000000000000000000", 10)});
+                    const storedData = await instance.counterID.call();
+                    expect(storedData).to.be.bignumber.equal(new BN(1));
+                });
+                */
+
             })    
 
         })

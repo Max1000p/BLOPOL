@@ -340,19 +340,18 @@ contract Blopol is Ownable, ReentrancyGuard {
         uint feesInTime = _fees * priceFeed().mul(10**10);
         uint rewardStaking = msg.value - feesInTime;
 
-        uint currentCounter = counterId;
-        _createAds(currentCounter,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
-        _createContentAds(currentCounter, cads.dateAndTimeAds, cads.complaintAds, cads.productNameAds, cads.estimatedValueAds, cads.serialNumberAds, cads.contentAds);
-        _addRewardAds(currentCounter, rwd.amountReward);
+        _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
+        _createContentAds(counterId, cads.dateAndTimeAds, cads.complaintAds, cads.productNameAds, cads.estimatedValueAds, cads.serialNumberAds, cads.contentAds);
+        _addRewardAds(counterId, rwd.amountReward);
 
-        StakingToken storage data = stakingtokens[msg.sender][currentCounter];
+        StakingToken storage data = stakingtokens[msg.sender][counterId];
         if (data.walletAdAddress == address(0)){
              data.walletAdAddress = msg.sender;
         }
         // ToDo add payment Split > Calcul Fees plateforme en Matic
         blopolsWallet[owner()] += feesInTime;
-        _stake(rewardStaking, currentCounter, msg.sender);
-        emit PaymentReceived(msg.sender, currentCounter, rewardStaking);
+        _stake(rewardStaking, counterId, msg.sender);
+        emit PaymentReceived(msg.sender, counterId, rewardStaking);
         
         ++counterId;
     }
