@@ -75,11 +75,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         string nameCategory;
     }
 
-    struct ImageAds {
-        uint idImageAds;
-        string linkImage;
-    }
-
     struct Comments {
         uint commentDate;
         address helpers;
@@ -101,18 +96,17 @@ contract Blopol is Ownable, ReentrancyGuard {
     }
 
     /// @notice Data structure and storage for Ads
-    Ads[] public adsArray;
-    mapping(uint => ContentAds) public cads;
+    Ads[] adsArray;
+    mapping(uint => ContentAds)  cads;
     Category[] catArray;
-    mapping(uint => ImageAds[]) public imgArray;
-    mapping(uint => RewardAds) public rwd;
+    mapping(uint => RewardAds)  rwd;
     mapping (address => uint[]) adsOwner;
     
     /// @notice Data struture and storage for Comments
-    mapping(uint => Comments[]) public comments;
+    mapping(uint => Comments[])  comments;
     mapping(address => uint[]) helpersAds;
 
-    WithdrawAds[] public withdrawArray;
+    WithdrawAds[]  withdrawArray;
     
     ///@notice Control Address and check if identifier Ads exists
     modifier checkAdsRecord(uint _idAds){
@@ -140,7 +134,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     /* ----------------  EVENTS ------------------- */
     event CreateAds(address indexed ownerAds, uint idAds, uint depositAds, string titleAds, string geolocAds);
     event CreateContentAds(uint indexed idAds, uint dateAndTimeAds);
-    event AddImage(uint indexed idAds,uint indexed idImageAds, string linkImage);
     event AddReward(uint indexed idAds, uint ammountReward);
     event AddComment(uint indexed idAds,address account);
     event PaymentReceived(address indexed from, uint256 idAds, uint256 amount);
@@ -220,13 +213,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         
         emit CreateContentAds(_idAdsC,_dateAndTimeAds);
     } 
-
-    /// @notice Add an image on Ads, mapping and array structure
-    function _addImage(uint _id, uint _idImageAds, string memory _linkImage) private {
-        ImageAds memory newImage = ImageAds(_idImageAds, _linkImage);
-        imgArray[_id].push(newImage);
-        emit AddImage(_id,_idImageAds,_linkImage);
-    }
 
     /// @notice Add Reward in Ads, mapping structure
     /// @dev reward is calculated when user pay to store his Ads
@@ -347,16 +333,16 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Payment function deposit Ads in Wallet Staking
     /// @notice Split payment with fees amount (blopolsWallet) and reward amount, store information in staking(stakingtokens) wallet by Ad
     /// @notice Stake amount for calcul reward for staker
-    /// @dev principal function to store Ads onchain
-    function paymentAds(uint _amount,Ads calldata ads, ContentAds calldata cads, ImageAds calldata img,RewardAds calldata rwd) external payable {
-        
+    /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
+    function paymentAds(Ads calldata ads, ContentAds calldata cads, RewardAds calldata rwd) external payable {
+        uint mpaid = (_softCap * priceFeed().mul(10**10))+(_fees * priceFeed().mul(10**10));
+        require(msg.value >= mpaid, "Price minimum required");
         uint feesInTime = _fees * priceFeed().mul(10**10);
-        uint rewardStaking = _amount - feesInTime;
+        uint rewardStaking = msg.value - feesInTime;
 
         uint currentCounter = counterId;
         _createAds(currentCounter,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
         _createContentAds(currentCounter, cads.dateAndTimeAds, cads.complaintAds, cads.productNameAds, cads.estimatedValueAds, cads.serialNumberAds, cads.contentAds);
-        _addImage(currentCounter, img.idImageAds, img.linkImage);
         _addRewardAds(currentCounter, rwd.amountReward);
 
         StakingToken storage data = stakingtokens[msg.sender][currentCounter];
@@ -510,13 +496,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @param _value, _percentage
     function _calculatePercentage(uint256 _value, uint256 _percentage) private pure returns (uint256) {
         return _value.mul(_percentage).div(10**20);
-    }
-
-    /// @notice Get SoftCap price minimum for reward
-    /// @dev Can sub Total - Softcap for value fees
-    /// @return price
-    function getPriceFeedSoft() public view returns(uint){
-        return _softCap * priceFeed().mul(10**10);
     }
     
     /// @notice function to calcul if withdraw by Ads is possible for user

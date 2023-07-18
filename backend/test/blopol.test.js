@@ -22,10 +22,10 @@ contract('Blopol', accounts => {
 
         context("Test Admin function setting value", function () {
             
-            it("account who is not owner can't set duration, revert", async () => {
+            it("account who is not owner can't set SoftCap, revert", async () => {
                 await expectRevert(instance.setSoftCap(new BN(1000), {from: second}), "Ownable: caller is not the owner");
             });
-            it("Owner account can set duration", async () => {
+            it("Owner account can set SoftCap", async () => {
                 await instance.setSoftCap(new BN(1000), {from: owner});
                 const storedData = await instance.getSoftCap({from: owner});
                 expect(storedData).to.be.bignumber.equal(new BN(1000));
@@ -74,7 +74,7 @@ contract('Blopol', accounts => {
 
         describe("Setup staking rate with notifyRewardAmount. Smart contract need Token first", function () {
 
-            context("Send Token to SmartContract Blopol - Mint token Blopol)", function () {
+            context("Send Token to SmartContract Blopol and setup rate and staking vars", function () {
                  
                 it("user can't mint token, revert", async () => {
                     await expectRevert(erc20instance.mint(third,new BN(10000), {from: second}), "Ownable: caller is not the owner");
@@ -115,10 +115,41 @@ contract('Blopol', accounts => {
                     expect(finishAt.toString()).to.be.equal(sum.toString());
                 });
 
-
+                it("Owner want to set new duration before finishAt expired, revert", async () => {
+                    await expectRevert(instance.setRewardsDuration(new BN(100000), {from: owner}), "reward duration not finished");
+                });
             })
 
         })
+
+        describe("Application is setup, interaction with user and staking", function () {
+            
+            context("User want to deposit an Ad, system to calcul Ad and reward helpers", function () {
+                
+                it("Give minimum price for fees platform and reward helpers, result not be 0", async () => {
+                    const px = await instance.displayAmountForDepositAd();
+                    console.log(px.toString());
+                    expect(px.toString()).to.not.equal(new BN(0));
+                });
+            })    
+
+            context("Deposit AD, check minimum price, stake token", function () {
+                
+                it("User can't deposit Ad if payment minimal amount is not reach", async () => {
+                    const amount = 12255565200000;
+                    const ads = {idAds:0,ownerAds:"0x90F79bf6EB2c4f870365E785982E1f101E93b906",depositAds: 11689258304,
+                                 titleAds:"Montre Rollex volee",idcatAds:0,geolocAds:"48.8588897,2.320041"};
+                    const cads = {idAdsC:0,dateAndTimeAds:11689258900,complaintAds:0,productNameAds:"Rollex Or",estimatedValueAds:"2000$",
+                                  serialNumberAds:"xxxxxx",contentAds:"Vole en vacance au bord de la mer"};
+                    const img = {idImageAds:0,linkImage:"https://gateway.pinata.cloud/ipfs/QmUZYwvQBHarZq69WukmhiotRmKVwszEPGeqSeUH6m6abg"};
+                    const rwd = {idAds:0,amountReward:12255565200000};
+
+                    await expectRevert(instance.paymentAds(ads,cads,img,rwd, {from: third}), "Price minimum required");
+                });
+            })    
+
+        })
+
         
     })     
 })
