@@ -16,7 +16,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     IERC20 public immutable rewardsToken;
 
     /// @notice Duration of rewards to be paid out (in seconds)
-    uint public duration;
+    uint duration;
     /// @notice Timestamp of when the rewards finish
     uint public finishAt;
     //// @notice Minimum of last updated time and reward finish time
@@ -26,9 +26,9 @@ contract Blopol is Ownable, ReentrancyGuard {
     //// @notice Sum of (reward rate * dt * 1e18 / total supply)
     uint public rewardPerTokenStored;
     /// @notice Counter for AD
-    uint counterId;
+    uint public counterId;
     /// @notice Counter for Category
-    uint counterCat;
+    uint public counterCat;
     /// @notice Total staked
     uint public totalSupply;
     /// @notice Amount minimum for rewards
@@ -607,11 +607,25 @@ contract Blopol is Ownable, ReentrancyGuard {
         _updateReward(msg.sender, _idAd);
     }
 
+  
+
+    ///@dev Math to give x or y by operator
+    function _min(uint x, uint y) private pure returns (uint) {
+        return x <= y ? x : y;
+    }
+
+
+    /*------------ ADMIN FUNCTIONS ------------------------------*/
     /// @notice Set duration for staking reward in seconds
     /// @dev indispensable to calculate Rate per token
     function setRewardsDuration(uint _duration) external onlyOwner {
         require(finishAt < block.timestamp, "reward duration not finished");
         duration = _duration;
+    }
+
+    /// @notice Getter duration reward amount per seconds
+    function getRewardsDuration() external onlyOwner view returns(uint) {
+        return duration;
     }
 
     /// @notice initilise rate for staking
@@ -632,12 +646,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         updatedAt = block.timestamp;
     }
 
-    ///@dev Math to give x or y by operator
-    function _min(uint x, uint y) private pure returns (uint) {
-        return x <= y ? x : y;
-    }
-
-    /*------------ ADMIN FUNCTIONS ------------------------------*/
     /// @dev setter Sofcap
     function setSoftCap(uint _amount) external onlyOwner {
         require(_amount > 0, "Value not correct");
@@ -675,6 +683,18 @@ contract Blopol is Ownable, ReentrancyGuard {
         cat.nameCategory = _name;
         catArray.push(cat);
         ++counterCat;
+    }
+
+    /// @notice add category for Ads
+    /// @param _idcat Array key
+    /// @return categoryname String category name
+    function getCategory(uint _idcat) external view onlyOwner returns(string memory categoryname) {
+        for (uint i = 0; i < catArray.length; i++) {
+            if (catArray[i].idCategory == _idcat) {
+                categoryname = catArray[i].nameCategory;
+            }
+        }
+        return categoryname;
     }
 
     /// @notice Withdrawal smartContract security owner

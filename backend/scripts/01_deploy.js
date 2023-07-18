@@ -49,7 +49,7 @@ async function main() {
     log: true,
   });
     
-    console.log(blopol.address)
+  console.log(blopol.address)
 
 }
 
