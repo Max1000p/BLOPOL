@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./BokkyPooBahsDateTimeLibrary.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /// @title A decentralized solution for stolen or lost products
 /// @author PAREJA Cyril
@@ -157,8 +160,13 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @param  _idAd identifier Ads
     /// @return deposit date of Ads
     function _getAdsDepositDate(uint _idAd) private view returns(uint){
+        console.log('_getdeposfunction');
+        console.log(_idAd);
         for (uint i = 0; i < adsArray.length; i++) {
+            console.log(adsArray[i].idAds);
             if (adsArray[i].idAds == _idAd) {
+                
+                console.log(adsArray[i].depositAds);
                 return adsArray[i].depositAds;
             }
         }
@@ -324,7 +332,7 @@ contract Blopol is Ownable, ReentrancyGuard {
         uint rewardStaking = msg.value - feesInTime;
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
-        _addRewardAds(counterId, rwd.amountReward);
+        _addRewardAds(counterId, rewardStaking);
 
         StakingToken storage data = stakingtokens[msg.sender][counterId];
         if (data.walletAdAddress == address(0)){
@@ -410,9 +418,10 @@ contract Blopol is Ownable, ReentrancyGuard {
                 stepWithdraw += withdrawArray[i].stepWithdraw;
             }
         }
-        
+        console.log('Send idAd =');
+        console.log(_idAd);
         uint nbDepositDay = getDiffDayAd(_getAdsDepositDate(_idAd));
-
+        console.log(nbDepositDay);
         if (countWithdrawal == 0){
 
             if( nbDepositDay < STEP_0_7_DAYS){
@@ -488,11 +497,21 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice function to calcul if withdraw by Ads is possible for user
     /// @notice depend range and SoftCap
     /// @return amount withdraw if criteria time and sofcap are good
-    function _calcWithdrawAmountPossible(uint _idAd) checkAdsRecord(_idAd) private view returns(uint){
-
+    function _calcWithdrawAmountPossible(uint _idAd) private view returns(uint){
+        console.log("rentre dans la fonction");
         uint rate = _percentAuthorizeWithdrawByAd(_idAd) * 10**18;
+        console.log(rate);
         if (rate > 0){
-            if ( (rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * priceFeed().mul(10**10)) ){
+            uint rw = rwd[_idAd].amountReward;
+            uint amr = rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate);
+            uint sfc = (_softCap * priceFeed().mul(10**10));
+            console.log(rw);
+            console.log(amr);
+            console.log(sfc);
+            
+            if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * priceFeed().mul(10**10)) ){
+                
+                
                 return 0; 
             } else { 
                 return _calculatePercentage(rwd[_idAd].amountReward,rate); 
@@ -522,7 +541,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Send withdraw for owner
     /// @dev using BokkyPooBahsDateTimeLibrary to calc deposit days to now
     /// @dev all mecanism staking and withdrawal
-    function withdraw(uint256 _idAd) external payable checkAdsRecord(_idAd) nonReentrant {
+    function withdraw(uint256 _idAd) external checkAdsRecord(_idAd) payable nonReentrant {
         uint _amount = _calcWithdrawAmountPossible(_idAd);
         require(_amount != 0, "Withdraw not possible at this moment");
         require(stakingtokens[msg.sender][_idAd].amount >= _amount, "not enough funds");
