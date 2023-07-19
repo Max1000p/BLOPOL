@@ -183,6 +183,20 @@ contract Blopol is Ownable, ReentrancyGuard {
         emit CreateAds(msg.sender, _currentCounter, _depositAds, _titleAds, _geolocAds);
     }
     
+    ///@notice Display an ads by Id
+    ///@param _idAds Identifier Ads
+    ///@return uint, address, uint, string memory, uint, string memory in array
+    function getAdsById(uint _idAds) external view returns (uint, address, uint, string memory, uint, string memory) {
+        Ads memory ads = adsArray[_idAds];
+        return (ads.idAds, ads.ownerAds, ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
+    }
+
+    ///@notice for creator, display reward amount initial
+    ///@param _idAds Identifier Ads
+    ///@return amountReward
+    function getRewardInitial(uint _idAds) external checkAdsRecord(_idAds) view returns(uint){
+        return rwd[_idAds].amountReward;
+    }
 
     /// @notice Add Reward in Ads, mapping structure
     /// @dev reward is calculated when user pay to store his Ads
@@ -235,7 +249,7 @@ contract Blopol is Ownable, ReentrancyGuard {
         return _calculatePercentage(rwd[_idAd].amountReward,r);
     }
 
-    /// @notice display reward amount for helpers
+    /// @notice display reward amount for helpers with calcul range / percentage / duration
     /// @param _idAd Identifier Ads
     /// @return amount of reward
     function getRewardForAd(uint _idAd) external view returns(uint){
@@ -269,7 +283,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /*------------ STAKING Managment -------------*/
 
     /// @notice get balance Blopol msg.sender token
-     function BolpolBalance() external view returns(uint){
+     function getBlopolBalance() external view returns(uint){
         return rewardsToken.balanceOf(msg.sender);
     } 
 
@@ -547,7 +561,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice reward token Blopol for staker and per Ads
     /// @dev TokenBlopol utility DAO later
     /// @dev Update reward for user 
-    function getReward(uint256 _idAd) external nonReentrant {
+    function getReward(uint _idAd) external checkAdsRecord(_idAd) nonReentrant {
         uint reward = rewards[msg.sender][_idAd];
         if (reward > 0) {
             rewards[msg.sender][_idAd] = 0;
