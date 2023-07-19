@@ -14,8 +14,6 @@ contract('Blopol', accounts => {
     /** Constantes for Ads */
     const ads = {idAds:0,ownerAds:"0x90F79bf6EB2c4f870365E785982E1f101E93b906",depositAds: 11689258304,
                         titleAds:"Montre Rollex volee",idcatAds:0,geolocAds:"48.8588897,2.320041"};
-    const cads = {idAdsC:0,dateAndTimeAds:11689258900,complaintAds:0,productNameAds:"Rollex Or",estimatedValueAds:"2000$",
-                        serialNumberAds:"xxxxxx",contentAds:"Vole en vacance au bord de la mer"};
     const rwd = {idAds:0,amountReward:12255565200000};
 
 
@@ -138,46 +136,74 @@ contract('Blopol', accounts => {
                 });
             })    
 
-            context("Deposit AD, check minimum price, stake token", function () {
+            context("Deposit AD, check minimum price, check total Supply", function () {
 
                 it("User can't deposit Ad if payment minimal amount is not reach", async () => {
-                    await expectRevert(instance.paymentAds(ads,cads,rwd, {from: third, value: new BN(1000)}), "Price minimum required");
+                    await expectRevert(instance.paymentAds(ads,rwd, {from: third, value: new BN(1000)}), "Price minimum required");
+                });
+
+                it("No ads deposit, no staking, total supply amount = 0", async () => {
+                    const storedData = await instance.totalSupply.call();
+                    expect(storedData).to.be.bignumber.equal(new BN(0));
                 });
 
                 it("User deposit Ad with minimum payment, get Event PaymentReceived", async () => {
-                    const pxmini = await instance.displayAmountForDepositAd();
-                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: third, value: new BN("830000000000000000000", 10)});
+                    const findEvent = await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
                     expectEvent(findEvent,"PaymentReceived");
                 });
 
-                it("User deposit Ad with minimum payment, get Event CreateAds", async () => {
-                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: third, value: new BN("830000000000000000000", 10)});
-                    expectEvent(findEvent,"CreateAds");
-                    const storedData = await instance.counterId.call();
-                    console.log(storedData);
+                it("Second Ads deposit, total supply amount added", async () => {
+                    await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
+                    const storedData = await instance.totalSupply.call();
+                    expect(storedData).to.be.bignumber.not.equal(new BN(0));
                 });
 
-                it("User deposit Ad with minimum payment, get Event CreateContentAds", async () => {
-                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: second, value: new BN("830000000000000000000", 10)});
-                    expectEvent(findEvent,"CreateContentAds");
-                    const storedData = await instance.counterId.call();
-                    console.log(storedData);
+                it("User deposit Ad with minimum payment, get Event CreateAds", async () => {
+                    const findEvent = await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
+                    expectEvent(findEvent,"CreateAds");
                 });
 
                 it("User deposit Ad with minimum payment, get Event AddReward", async () => {
-                    const findEvent = await instance.paymentAds(ads,cads,rwd, {from: second, value: new BN("830000000000000000000", 10)});
-                    expectEvent(findEvent,"AddReward");
-                    const storedData = await instance.counterId.call();
-                    console.log(storedData);
+                    const findEvent = await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
+                });
+
+                it("counterId Ads auto increment when adding new Ads", async () => {
+                    const counterBeforeCreate = await instance.counterId.call();
+                    await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
+                    const counterAfterCreate = await instance.counterId.call();
+                    expect(counterAfterCreate).to.be.bignumber.equal(new BN(counterBeforeCreate).add(new BN(1)));
+                });
+
+            })
+
+            context("Stake token by Ad", function () {
+
+                it("User can't check balance staking token if he is not the Owner Creator Ad", async () => {
+                    await expectRevert(instance.getBalanceStakingTokenByAds(new BN(2), {from: owner}), "Wrong account for this action");
+                });
+
+                it("User who create ads can show his balance staking ads", async () => {
+                    await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
+                    const idAd = await instance.counterId.call();
+                    const storedData = await instance.getBalanceStakingTokenByAds(new BN(idAd).sub(new BN(1)), {from: third});
+                    expect(storedData).to.be.bignumber.not.equal(new BN(0));
                 });
 
                 /*
-                it("counterId Ads auto increment when adding new Ads", async () => {
-                    await instance.paymentAds(ads,cads,rwd, {from: second, value: new BN("830000000000000000000", 10)});
-                    const storedData = await instance.counterID.call();
-                    expect(storedData).to.be.bignumber.equal(new BN(1));
+                it("User who is not owner ad can't see earned balance", async () => {
+                    await expectRevert(instance.earned(owner,0), "Wrong account for this action");
+                });
+                /*
+                it("User who is ads owner can see earned balance", async () => {
+                    await instance.paymentAds(ads,rwd, {from: third, value: new BN("1000000000000000000000", 10)});
+                    const idAd = await instance.counterId.call();
+                    console.log(idAd.toString());
+                    const storedData = await instance.earned(second,8);
+                    expect(storedData).to.be.bignumber.not.equal(new BN(0));
                 });
                 */
+
+
 
             })    
 

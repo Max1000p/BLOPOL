@@ -16,7 +16,7 @@ async function main() {
     const blopolContract = await ethers.getContractFactory("Blopol");
     const instance = await blopolContract.attach(blopolAddress);
     // Set SoftCap for minimal amount reward per ADs
-    await instance.setSoftCap(11);
+    await instance.setSoftCap(10);
     const SoftCap = await instance.getSoftCap();
     console.log("SoftCap updated : " + SoftCap);
     // Set Ad Amount for user Blopol 5$ en Matic 

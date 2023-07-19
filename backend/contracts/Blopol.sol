@@ -58,18 +58,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         string geolocAds;
     }
 
-    /// @notice store for contents
-    /// @dev Mapping solution storage for ads 
-    struct ContentAds {
-        uint idAdsC;
-        uint dateAndTimeAds;
-        bool complaintAds;
-        string productNameAds;
-        string estimatedValueAds;
-        string serialNumberAds;
-        string contentAds;
-    }
-
     struct Category {
         uint idCategory;
         string nameCategory;
@@ -97,10 +85,9 @@ contract Blopol is Ownable, ReentrancyGuard {
 
     /// @notice Data structure and storage for Ads
     Ads[] adsArray;
-    mapping(uint => ContentAds)  cads;
     Category[] catArray;
     mapping(uint => RewardAds)  rwd;
-    mapping (address => uint[]) adsOwner;
+    mapping(address => uint[]) adsOwner;
     
     /// @notice Data struture and storage for Comments
     mapping(uint => Comments[])  comments;
@@ -111,7 +98,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     ///@notice Control Address and check if identifier Ads exists
     modifier checkAdsRecord(uint _idAds){
         require(msg.sender != address(0), "Wrong address");
-        require(_idAdsExistsForAccount(msg.sender, _idAds), "Ads not exists");
+        require(_idAdsExistsForAccount(msg.sender, _idAds), "Wrong account for this action");
         _;
     }
 
@@ -121,19 +108,17 @@ contract Blopol is Ownable, ReentrancyGuard {
         uint256 amount;
     }
     
-    /// Wallet pour récupérer les fees
-    mapping(address => uint) public blopolsWallet;
-    /// Un wallet de staking par annonce
-    mapping(address => mapping(uint256 => StakingToken)) public stakingtokens;
-
+    ///@notice Wallet for owner Blopol platform
+    mapping(address => uint) blopolsWallet;
+    /// @notice Staking wallet by Ads
+    mapping(address => mapping(uint256 => StakingToken)) stakingtokens;
     // User address => rewardPerTokenStored
-    mapping(address => mapping(uint => uint)) public userRewardPerTokenPaid;
+    mapping(address => mapping(uint => uint)) userRewardPerTokenPaid;
     // User address => rewards to be claimed
-    mapping(address => mapping(uint => uint)) public rewards;
+    mapping(address => mapping(uint => uint)) rewards;
     
     /* ----------------  EVENTS ------------------- */
     event CreateAds(address indexed ownerAds, uint idAds, uint depositAds, string titleAds, string geolocAds);
-    event CreateContentAds(uint indexed idAds, uint dateAndTimeAds);
     event AddReward(uint indexed idAds, uint ammountReward);
     event AddComment(uint indexed idAds,address account);
     event PaymentReceived(address indexed from, uint256 idAds, uint256 amount);
@@ -156,7 +141,7 @@ contract Blopol is Ownable, ReentrancyGuard {
 
     /// @notice Control if an Ad exist for an account creator
     /// @dev control if a user have got an Ads
-    /// @param _account, _idAds
+    /// @param _account, _idAdsadsOwner
     /// @return Bool
     function _idAdsExistsForAccount(address _account, uint _idAds) private view returns (bool) {
         require(_account != address(0), "user address not exists");
@@ -198,21 +183,6 @@ contract Blopol is Ownable, ReentrancyGuard {
         emit CreateAds(msg.sender, _currentCounter, _depositAds, _titleAds, _geolocAds);
     }
     
-    /// @notice Create data content Ads, mapping structure
-    /// @dev content of Ads added in mapping
-    function _createContentAds(uint _idAdsC,uint _dateAndTimeAds,bool _complaintAds,string calldata _productNameAds,string calldata _estimatedValueAds,
-                              string calldata _serialNumberAds,string calldata _contentAds) private checkAdsRecord(_idAdsC){
-        cads[_idAdsC].idAdsC = _idAdsC;
-        cads[_idAdsC].dateAndTimeAds = _dateAndTimeAds;
-        cads[_idAdsC].complaintAds = _complaintAds;
-        cads[_idAdsC].complaintAds = _complaintAds;
-        cads[_idAdsC].productNameAds = _productNameAds;
-        cads[_idAdsC].estimatedValueAds = _estimatedValueAds;
-        cads[_idAdsC].serialNumberAds = _serialNumberAds;
-        cads[_idAdsC].contentAds = _contentAds;
-        
-        emit CreateContentAds(_idAdsC,_dateAndTimeAds);
-    } 
 
     /// @notice Add Reward in Ads, mapping structure
     /// @dev reward is calculated when user pay to store his Ads
@@ -228,7 +198,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev mapping helperAds to display all this comment for Ads in platform
     function addComment(uint _idAds,uint _commentDate,string calldata _information) external payable {
         require(msg.sender != address(0), "Wrong address");
-        require(cads[_idAds].idAdsC == _idAds, "Ads not exist");
         Comments memory newComment = Comments(_commentDate,msg.sender,_information,false);
         comments[_idAds].push(newComment);
         helpersAds[msg.sender].push(_idAds);
@@ -334,14 +303,13 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Split payment with fees amount (blopolsWallet) and reward amount, store information in staking(stakingtokens) wallet by Ad
     /// @notice Stake amount for calcul reward for staker
     /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
-    function paymentAds(Ads calldata ads, ContentAds calldata cads, RewardAds calldata rwd) external payable {
+    function paymentAds(Ads calldata ads, RewardAds calldata rwd) external payable {
         uint mpaid = (_softCap * priceFeed().mul(10**10))+(_fees * priceFeed().mul(10**10));
         require(msg.value >= mpaid, "Price minimum required");
         uint feesInTime = _fees * priceFeed().mul(10**10);
         uint rewardStaking = msg.value - feesInTime;
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
-        _createContentAds(counterId, cads.dateAndTimeAds, cads.complaintAds, cads.productNameAds, cads.estimatedValueAds, cads.serialNumberAds, cads.contentAds);
         _addRewardAds(counterId, rwd.amountReward);
 
         StakingToken storage data = stakingtokens[msg.sender][counterId];
@@ -367,7 +335,7 @@ contract Blopol is Ownable, ReentrancyGuard {
         updatedAt = lastTimeRewardApplicable();
 
         if (_walletAdAddress != address(0)) {
-            rewards[_walletAdAddress][_idAd] = earned(_walletAdAddress,_idAd);
+            rewards[_walletAdAddress][_idAd] = _earned(_walletAdAddress,_idAd);
             userRewardPerTokenPaid[_walletAdAddress][_idAd] = rewardPerTokenStored;
         }
     }
@@ -392,6 +360,12 @@ contract Blopol is Ownable, ReentrancyGuard {
         return stakingtokens[msg.sender][_idAd].amount;
     }
 
+    /// @notice Get balance reward Blopol by Ads only for Ads Owner
+    /// @param _idAd Identifier Ad
+    /// return amount reward by Ads
+    function getBalanceRewardBlopolByAds(uint _idAd) checkAdsRecord(_idAd) external view returns(uint){
+        return rewards[msg.sender][_idAd];
+    }
 
     /// @notice Call Chainlink Oracle for price feed
     /// @dev ToDo in deployed Project 
@@ -564,7 +538,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice function to compute Ads reward wallet and show amount earned by user
     /// @param _walletAdAddress Address owner earned, _idAd Identifier Ad
     /// @return amount earned calculate by staking function 
-    function earned(address _walletAdAddress, uint256 _idAd) private view returns (uint256) {
+    function _earned(address _walletAdAddress, uint256 _idAd) private view returns (uint256) {
         return  (stakingtokens[_walletAdAddress][_idAd].amount * 
                 (rewardPerToken() - userRewardPerTokenPaid[_walletAdAddress][_idAd])) / 1e18 + 
                 rewards[_walletAdAddress][_idAd];
@@ -641,13 +615,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev getter Fees
     function getFees() external onlyOwner view returns(uint){
         return _fees;
-    }
-
-    /// @dev experimental to test range and percentage
-    function modifyAds(uint _id, uint _date) external onlyOwner {
-        adsArray[0].idAds = _id;
-        adsArray[0].depositAds = _date;
-
     }
 
     /// @notice add category for Ads
