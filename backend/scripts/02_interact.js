@@ -10,8 +10,8 @@ async function main() {
     const { deployer, user1, user2 } = await getNamedAccounts();
     // Déployer le premier contrat
 
-    const blopolAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-    const tokenblopoladdress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+    const blopolAddress = "0xf2dF1A0fbA70d39A264E91717DA5Dce1143857b0";
+    const tokenblopoladdress = "0x071c5BfDf9461cEBcD39b631de7db59329267b8B";
     // Initialize Smart Contract
     const blopolContract = await ethers.getContractFactory("Blopol");
     const instance = await blopolContract.attach(blopolAddress);

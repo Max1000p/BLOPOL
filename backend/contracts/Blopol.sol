@@ -6,11 +6,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./BokkyPooBahsDateTimeLibrary.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /// @title A decentralized solution for stolen or lost products
 /// @author PAREJA Cyril
 contract Blopol is Ownable, ReentrancyGuard {
-    
+    AggregatorV3Interface internal priceFeed;
     using BokkyPooBahsDateTimeLibrary for uint;
     using SafeMath for uint256;      
     IERC20 public immutable rewardsToken;
@@ -128,6 +129,7 @@ contract Blopol is Ownable, ReentrancyGuard {
 
     constructor(address _rewardToken) {
         rewardsToken = IERC20(_rewardToken);
+        priceFeed = AggregatorV3Interface(0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada);
     }
 
     /*------------ADS Managment -------------*/
@@ -307,8 +309,8 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev useful in frontend to display minimum amount for deposit
     /// @return Total amount minimum, user can add more for rewards 
     function displayAmountForDepositAd() external view returns(uint){
-        uint amountFees = _fees * priceFeed().mul(10**10);
-        uint amountSoftCap = _softCap * priceFeed().mul(10**10);
+        uint amountFees = _fees * uint256(getLatestPrice()).mul(10**10);
+        uint amountSoftCap = _softCap * uint256(getLatestPrice()).mul(10**10);
         return amountFees + amountSoftCap;
     }
 
@@ -318,9 +320,9 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Stake amount for calcul reward for staker
     /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
     function paymentAds(Ads calldata ads, RewardAds calldata rwd) external payable {
-        uint mpaid = (_softCap * priceFeed().mul(10**10))+(_fees * priceFeed().mul(10**10));
+        uint mpaid = (_softCap * uint256(getLatestPrice()).mul(10**10))+(_fees * uint256(getLatestPrice()).mul(10**10));
         require(msg.value >= mpaid, "Price minimum required");
-        uint feesInTime = _fees * priceFeed().mul(10**10);
+        uint feesInTime = _fees * uint256(getLatestPrice()).mul(10**10);
         uint rewardStaking = msg.value - feesInTime;
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
@@ -383,9 +385,11 @@ contract Blopol is Ownable, ReentrancyGuard {
 
     /// @notice Call Chainlink Oracle for price feed
     /// @dev ToDo in deployed Project 
-    function priceFeed() public pure returns(uint){
-        return 81703768;
-    }
+    function getLatestPrice() public view returns (int) {         
+        ( /*uint80 roundID*/, int price, /*uint startedAt*/, /*uint timeStamp*/, /*uint80 answeredInRound*/ )
+		= priceFeed.latestRoundData();
+		return price;       
+	}
 
     /// @notice use Booky Librairie to calculate Ads days since deposit start
     /// @return day number 
@@ -489,10 +493,9 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice depend range and SoftCap
     /// @return amount withdraw if criteria time and sofcap are good
     function _calcWithdrawAmountPossible(uint _idAd) checkAdsRecord(_idAd) private view returns(uint){
-
         uint rate = _percentAuthorizeWithdrawByAd(_idAd) * 10**18;
         if (rate > 0){
-            if ( (rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * priceFeed().mul(10**10)) ){
+            if ( (rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * uint256(getLatestPrice()).mul(10**10)) ){
                 return 0; 
             } else { 
                 return _calculatePercentage(rwd[_idAd].amountReward,rate); 
