@@ -7,8 +7,8 @@ import { HStack, Center } from '@chakra-ui/react';
 const Header = () => {
     return (
         <Flex p="2rem" justifyContent="space-between" alignItems="Center">
-            <Text>
-                <h1>B</h1>
+            <Text fontSize={24} fontWeight={"bold"}>
+                B
             </Text>
             <Center mt='1rem'>
                 <HStack spacing='24px'>

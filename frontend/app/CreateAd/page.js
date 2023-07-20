@@ -1,6 +1,6 @@
 "use client"
 import { Container } from '@chakra-ui/react'
-import { SimpleGrid, Box, Input, Select, FormLabel, FormControl,Button } from '@chakra-ui/react'
+import { SimpleGrid, Box, Input, Select, FormLabel, FormControl,Button,Card,CardBody,Text } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
 import { hardhat } from 'viem/chains'
 import { useState, useEffect } from 'react'
@@ -25,7 +25,7 @@ const createad = () => {
     const [geolocAds, setgeolocAds] = useState("")
     const [idcatAds, setidcatAds] = useState("")
 
-    
+
 
   return (
     <div>
@@ -58,6 +58,14 @@ const createad = () => {
                             </Box>
                     </Box>
                     <Box  w='100%'><h2>INFORMATION SUR L'ANNONCE</h2>
+                    <Card>
+                        <CardBody>
+                          <Text>
+                                Montant minimum pour déposer une Annonce
+                          </Text>
+
+                        </CardBody>
+                      </Card>
                 </Box>
         </SimpleGrid>
     </div>
