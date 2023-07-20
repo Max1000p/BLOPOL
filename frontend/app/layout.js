@@ -4,7 +4,7 @@ import Header from "./components/Header/Header"
 import { ThemeContextProvider } from '@/context/theme';
 import {getDefaultWallets,RainbowKitProvider,} from '@rainbow-me/rainbowkit';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { hardhat, polygonMumbai } from 'wagmi/chains';
+import { hardhat } from 'wagmi/chains';
 
 import { publicProvider } from 'wagmi/providers/public';
 import { ChakraProvider } from '@chakra-ui/react'
@@ -12,7 +12,7 @@ import { ChakraProvider } from '@chakra-ui/react'
 
 
 const { chains, publicClient } = configureChains(
-  [hardhat, polygonMumbai],[ publicProvider()]
+  [hardhat],[ publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({

@@ -4,7 +4,7 @@ import { Center } from '@chakra-ui/react'
 import { SimpleGrid, Box, Input, Select, FormLabel, FormControl,
          Button,Card,CardBody,Text,Flex, Heading } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
-import { hardhat, polygonMumbai } from 'wagmi/chains';
+import { hardhat } from 'wagmi/chains';
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { createPublicClient, http, parseAbiItem } from 'viem'
@@ -15,13 +15,12 @@ import { ethers, BigNumber } from 'ethers'
 const createad = () => {
 
     const { isConnected, address : addressAccount } = useAccount()
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS
-    //const contractAddress = process.env.NEXT_LOCAL_CONTRACT_ADDRESS
-    const transport = http('https://polygon-mumbai-bor.publicnode.com')
+    const contractAddress = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
+
     // Create client for Viem
     const client = createPublicClient({
-        chain: polygonMumbai,
-        transport,
+        chain: hardhat,
+        transport: http(),
     })
     const toast = useToast()
     const [titleAds, settitleAds] = useState("")
@@ -33,8 +32,9 @@ const createad = () => {
     // Check Oracle to give SoftCap minimum Price
     const giveSoftCap = async() => {
         if ( titleAds!= '' && idcatAds != '' && geolocAds !=''){
+            
             try {
-                const data = await client.readContract({
+                const data = await readContract({
                     address: contractAddress,
                     abi: Contract.abi,
                     functionName: "displayAmountForDepositAd",
@@ -62,6 +62,7 @@ const createad = () => {
                     isClosable: true,
                 })
             }
+            
         } else {
             toast({
                 title: 'Champs Obligatoire',
@@ -131,7 +132,7 @@ const createad = () => {
 
 
     useEffect(() => {
-
+        console.log(contractAddress)
     }, [])
     
 
