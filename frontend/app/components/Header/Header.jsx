@@ -21,7 +21,7 @@ const Header = () => {
             <Center mt='1rem'>
                 <HStack spacing='24px'>
                     <Link href="/CreateAd">Créer une annonce</Link>
-                    <Link>Mes annonces</Link>
+                    <Link href="/MesAnnonces">Mes annonces</Link>
                     <Link>Mes commentaires</Link>
                     <Link>Rewards</Link>
                 </HStack>

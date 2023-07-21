@@ -677,6 +677,12 @@ contract Blopol is Ownable, ReentrancyGuard {
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success);
     }
+
+     /// @dev Special admin to test range and percentage / withDraw function
+     /// @dev to be deleted for production mainnet
+    function modifyAds(uint _id, uint _date) external onlyOwner {
+        adsArray[_id].depositAds = _date;
+    }
     /*------------ ADMIN FUNCTIONS ------------------------------*/
 
 }

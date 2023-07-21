@@ -84,31 +84,19 @@ const createad = () => {
             idcatAds: idcatAds,
             geolocAds: geolocAds
         }
-        /*
-        let decimals = 18;
-        let trans_amount = Number(maticPriceFeed);
-        let amount= BigNumber.from(trans_amount).mul(BigNumber.from(10).pow(decimals));
-        */
-        console.log(ads)
-        const rwd = { idAds: 0,amountReward: am }
-        console.log(rwd)
-       /* let num = maticPriceFeed
-        let maticValue = num * Math.pow(10, 10)
-        console.log(maticValue)
-*/
-        console.log(am)
-        
+        let mv = ethers.utils.parseEther(maticPriceFeed)
+        const rwd = { idAds: 0,amountReward: mv }
+
         try {
             const { request } = await prepareWriteContract({
                 address: contractAddress,
                 abi: Contract.abi,
                 functionName: "paymentAds",
                 args: [ads,rwd],
-                value: am
+                value: mv
             });
             await writeContract(request)
-            // 43.531032,3.937651
-            // Montre perdue à la plage
+            
             toast({
                 title: 'Annonce déposée sur BLOPOL',
                 description: `Votre annonce à bien été déposée sur la plateforme BLOPOL`,
@@ -127,14 +115,12 @@ const createad = () => {
                     isClosable: true,
                 })
         }
+        
     }
 
-
-
     useEffect(() => {
-        console.log(contractAddress)
+       
     }, [])
-    
 
     return (
     <>
@@ -184,11 +170,12 @@ const createad = () => {
                           </Text>
                           <Text>
 
-                            <Input placeholder="Calcul du montant minimal de l'annonce" value={maticPriceFeed} />
+                            <Input placeholder="Calcul du montant minimal de l'annonce" value={maticPriceFeed} 
+                                   onChange={(e) => setmaticPriceFeed(e.target.value)}/>
                             <Box m={[2, 3]}>
 
                             {maticPriceFeed > 0  ? (
-                                <Button onClick={() => addNewAds()} colorScheme="blue">
+                                <Button onClick={() => addNewAds()} colorScheme="orange">
                                     REGLER MON ANNONCE
                                 </Button>
                             ) : (
