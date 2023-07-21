@@ -1,7 +1,7 @@
 "use client"
 import { v4 as uuidv4 } from 'uuid';
 import NotConnected from '../components/NotConnected/NotConnected'
-import { SimpleGrid, Box, CircularProgress, Badge, FormLabel, 
+import { SimpleGrid, Box, Highlight, Badge, FormLabel, 
          FormControl,MdCheckCircle,Divider,Center,
          Button,Card,CardBody,Text,Flex, List, ListItem, ListIcon } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
@@ -161,6 +161,40 @@ const MesAnnonces = () => {
 
 
     }
+
+    // Ask for rewards Blopol
+    const AskForRewards = async(idAds) => {
+        try {
+            const { request } = await prepareWriteContract({
+                address: contractAddress,
+                abi: Contract.abi,
+                functionName: "getReward",
+                account: addressAccount,
+                args: [Number(idAds)],
+            });
+            await writeContract(request)
+            ShowAds(Number(idAds))
+
+            toast({
+                title: 'VOTRE RECOMPENSE',
+                description: `Vos Tokens BLOPOL de récompense vous ont été envoyés`,
+                status: 'success',
+                duration: 3000,
+                position: 'top',
+                isClosable: true,
+            })
+        }  catch(err) {
+            console.log(err)
+                toast({
+                    title: 'Error!',
+                    description: 'Error system, Reward Blopol Panic',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                })
+        }
+    }
+
     // Withdraw unstake
     const Unstake = async(idAds) => {
         try {
@@ -213,6 +247,7 @@ const MesAnnonces = () => {
         <SimpleGrid columns={3} spacing={30}>
 
             <Box  w='100%'>
+           
                 <Card>
                     <CardBody>
                         <Center><FormLabel>VOS ANNONCES</FormLabel></Center>
@@ -239,7 +274,10 @@ const MesAnnonces = () => {
                     {detailAnnonce.length > 0 ? (
                         <>
                         <FormLabel>
-                           <Badge colorScheme='purple'>Staked {stakedamount} MATIC</Badge>  <Badge colorScheme='yellow'>{balanceBlopol} BLOPOL</Badge>
+                            <Badge colorScheme='purple'>Staked {stakedamount} MATIC</Badge>
+                            <Divider m={3}orientation='horizontal' />
+                            <Badge colorScheme='yellow'>{balanceBlopol} BLOPOL</Badge>
+                            <Button onClick={() => AskForRewards(Number(detailAnnonce[0]))} colorScheme='cyan' size='xs'>Réclamer</Button>
                         </FormLabel>
                         <Divider m={5}orientation='horizontal' />
                         <Text as='b'>Annonce déposée le {dateDepot}</Text>
@@ -269,7 +307,7 @@ const MesAnnonces = () => {
                 <Card>
                     <CardBody>
                         <FormLabel>COMMENTAIRES</FormLabel>
-                        
+                        <Divider m={5}orientation='horizontal' />
                     </CardBody>
                 </Card>
             </Box>
