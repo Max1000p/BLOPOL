@@ -363,9 +363,12 @@ const MesAnnonces = () => {
                             <Center><Badge colorScheme='purple'>Staked {stakedamount} MATIC</Badge></Center>
                             <Divider m={3}orientation='horizontal' />
                             <Center><Badge colorScheme='yellow'>{balanceBlopol} BLOPOL</Badge></Center>
-                            <Center><Text><Button onClick={() => AskForRewards(Number(detailAnnonce[0]))} 
+                            {balanceBlopol > 0 ? (<Center><Text><Button onClick={() => AskForRewards(Number(detailAnnonce[0]))} 
                                     colorScheme='yellow' size='xs'>Réclamer</Button></Text>
                             </Center>
+                            ):(
+                                <Center><Text>...</Text></Center>)}
+                            
                         </FormLabel>
                         <Divider m={5}orientation='horizontal' />
 

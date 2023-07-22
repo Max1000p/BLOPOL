@@ -317,8 +317,8 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev useful in frontend to display minimum amount for deposit
     /// @return Total amount minimum, user can add more for rewards 
     function displayAmountForDepositAd() external view returns(uint){
-        uint amountFees = _fees * priceFeed().mul(10**10);
-        uint amountSoftCap = _softCap * priceFeed().mul(10**10);
+        uint amountFees = _fees * (10**18 / priceFeed()) * (10**8);
+        uint amountSoftCap = _softCap * (10**18 / priceFeed()) * (10**8);
         return amountFees + amountSoftCap;
     }
 
@@ -328,9 +328,9 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Stake amount for calcul reward for staker
     /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
     function paymentAds(Ads calldata ads, RewardAds calldata) external payable {
-        uint mpaid = (_softCap * priceFeed().mul(10**10))+(_fees * priceFeed().mul(10**10));
+        uint mpaid = (_softCap * (10**18 / priceFeed()) * (10**8))+(_fees * (10**18 / priceFeed()) * (10**8));
         require(msg.value >= mpaid, "Price minimum required");
-        uint feesInTime = _fees * priceFeed().mul(10**10);
+        uint feesInTime = _fees * (10**18 / priceFeed()) * (10**8);
         uint rewardStaking = msg.value - feesInTime;
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
@@ -506,12 +506,12 @@ contract Blopol is Ownable, ReentrancyGuard {
         if (rate > 0){
             uint rw = rwd[_idAd].amountReward;
             uint amr = rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate);
-            uint sfc = (_softCap * priceFeed().mul(10**10));
+            uint sfc = (_softCap * (10**18 / priceFeed()) * (10**8));
             console.log(rw);
             console.log(amr);
             console.log(sfc);
             
-            if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * priceFeed().mul(10**10)) ){
+            if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * (10**18 / priceFeed()) * (10**8))){
                 
                 
                 return 0; 

@@ -27,6 +27,7 @@ const createad = () => {
     const [geolocAds, setgeolocAds] = useState("")
     const [idcatAds, setidcatAds] = useState("")
     const [maticPriceFeed,setmaticPriceFeed] = useState(null)
+    const [oraclePrice, setoraclePrice] = useState(null)
     
     // Check Oracle to give SoftCap minimum Price
     const giveSoftCap = async() => {
@@ -46,6 +47,7 @@ const createad = () => {
                     isClosable: true,
                 })
                 setmaticPriceFeed(ethers.utils.formatEther(data))
+                setoraclePrice(ethers.utils.formatEther(data))
             }
             catch(err) {
                 toast({
