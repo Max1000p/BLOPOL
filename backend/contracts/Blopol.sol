@@ -309,8 +309,8 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev useful in frontend to display minimum amount for deposit
     /// @return Total amount minimum, user can add more for rewards 
     function displayAmountForDepositAd() external view returns(uint){
-        uint amountFees = _fees * uint256(getLatestPrice()).mul(10**10);
-        uint amountSoftCap = _softCap * uint256(getLatestPrice()).mul(10**10);
+        uint amountFees = _fees * (10**18 / uint256(getLatestPrice()) * (10**8));
+        uint amountSoftCap = _softCap * (10**18 / uint256(getLatestPrice()) * (10**8));
         return amountFees + amountSoftCap;
     }
 
@@ -320,9 +320,9 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Stake amount for calcul reward for staker
     /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
     function paymentAds(Ads calldata ads, RewardAds calldata rwd) external payable {
-        uint mpaid = (_softCap * uint256(getLatestPrice()).mul(10**10))+(_fees * uint256(getLatestPrice()).mul(10**10));
+        uint mpaid = (_softCap * (10**18 / uint256(getLatestPrice()) * (10**8)))+(_fees * (10**18 / uint256(getLatestPrice()) * (10**8)));
         require(msg.value >= mpaid, "Price minimum required");
-        uint feesInTime = _fees * uint256(getLatestPrice()).mul(10**10);
+        uint feesInTime = _fees * (10**18 / uint256(getLatestPrice()) * (10**8));
         uint rewardStaking = msg.value - feesInTime;
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
@@ -388,7 +388,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     function getLatestPrice() public view returns (int) {         
         ( /*uint80 roundID*/, int price, /*uint startedAt*/, /*uint timeStamp*/, /*uint80 answeredInRound*/ )
 		= priceFeed.latestRoundData();
-		return price;       
+        return price;       
 	}
 
     /// @notice use Booky Librairie to calculate Ads days since deposit start
