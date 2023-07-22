@@ -424,7 +424,7 @@ const MesAnnonces = () => {
                     </CardBody>
                 </Card>
             </Box>
-            
+            {detailAnnonce.length > 0 ? (
             <Box  w='100%'>
                 <Card>
                     <CardBody>
@@ -451,6 +451,9 @@ const MesAnnonces = () => {
                     </CardBody>
                 </Card>
             </Box>
+            )  : (
+                <></>
+            )}
 
         </SimpleGrid>
         ) : (
