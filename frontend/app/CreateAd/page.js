@@ -72,8 +72,20 @@ const createad = () => {
 
     // Add Ads
     const addNewAds = async() => {
+
         if ( titleAds!= '' && idcatAds != '' && geolocAds !=''){  
-            let timestamp = Math.floor(Date.now() / 1000);
+            
+            if(maticPriceFeed < oraclePrice){
+                toast({
+                    title: 'Prix minimum requis',
+                    description: "Le prix que vous avez entrez est insuffisant pour le dépôt de l'annonce",
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                })
+                setmaticPriceFeed(oraclePrice)
+            } else {
+                let timestamp = Math.floor(Date.now() / 1000);
             const ads = { idAds: 0,
                 ownerAds: addressAccount,
                 depositAds: timestamp,
@@ -113,7 +125,9 @@ const createad = () => {
                         duration: 3000,
                         isClosable: true,
                     })
+                }
             }
+            
         } else {
             toast({
                 title: 'Champs Obligatoire',
