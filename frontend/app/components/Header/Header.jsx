@@ -27,7 +27,7 @@ const Header = () => {
                 </HStack>
             </Center>
            
-            <ConnectButton  label="Se connecter" showBalance={false} />
+            <ConnectButton  label="Se connecter" showBalance={true} />
         </Flex>
         </>
     )

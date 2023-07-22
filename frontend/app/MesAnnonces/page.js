@@ -1,8 +1,8 @@
 "use client"
 import { v4 as uuidv4 } from 'uuid';
 import NotConnected from '../components/NotConnected/NotConnected'
-import { SimpleGrid, Box, Highlight, Badge, FormLabel, 
-         FormControl,MdCheckCircle,Divider,Center,
+import { SimpleGrid, Box,isOpen,onClose,PopoverTrigger,PopoverContent,PopoverHeader, Badge, FormLabel, 
+         Popover,MdCheckCircle,Divider,Center,PopoverArrow,PopoverCloseButton,PopoverBody,PopoverFooter,ButtonGroup,
          Button,Card,CardBody,Text,Flex, List, ListItem, ListIcon } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
 import { hardhat } from 'wagmi/chains';
@@ -24,14 +24,14 @@ const MesAnnonces = () => {
     })
     const toast = useToast()
     const [CreateAdsRegisteredLogs, setCreateAdsRegisteredLogs] = useState([])
-    const [AddCommentRegisteredLogs, setAddCommentRegisteredLogs] = useState([])
     const [detailAnnonce, setDetailAnnonce] = useState([])
     const [dateDepot,setdateDepot] = useState("")
     const [stakedamount, setstakedamount] = useState(0)
-    const [daystaked, setdaystaked] = useState(0)
     const [timestampAd,settimestampAd] = useState(null)
     const [witdrawPossible,setwithdrawPossible] = useState(0)
     const [balanceBlopol,setbalanceBlopol] = useState(0)
+    const [comment,setcomment] = useState([])
+    const [reward,setreward] = useState(0)
 
     // Fonction de formatage de la date
     function timestampToDate(timestamp){
@@ -53,22 +53,42 @@ const MesAnnonces = () => {
             fromBlock: 0n,
             toBlock: 'latest' // Pas besoin valeur par défaut
         })
-        console.log(CreateAdsRegisteredLogs)
         setCreateAdsRegisteredLogs(CreateAdsRegisteredLogs.map(
             log => ({address: log.args.ownerAds,idAds: log.args.idAds,depositAds: log.args.depositAds,titleAds: log.args.titleAds,geolocAds: log.args.geolocAds})
         ))
-
-        const AddCommentRegisteredLogs = await client.getLogs({
-            event: parseAbiItem('event AddComment(uint indexed idAds,address account)'),
-            fromBlock: 0n,
-            toBlock: 'latest'
-        })
-        console.log(AddCommentRegisteredLogs)
-        setAddCommentRegisteredLogs(AddCommentRegisteredLogs.map(
-            log => ({idComment: log.args.idAds,address: log.args.address})
-        ))
     }
     
+    const DeleteMyAds = async(idAds) => {
+        try {
+            const { request } = await prepareWriteContract({
+                address: contractAddress,
+                abi: Contract.abi,
+                functionName: "cancelMyAds",
+                account: addressAccount,
+                args: [Number(idAds)],
+            });
+            await writeContract(request)
+            ShowAds(Number(idAds))
+
+            toast({
+                title: 'Annonce supprimée',
+                description: `Votre annonce à bien été supprimée, vos fonds bloqués ont été remboursés`,
+                status: 'success',
+                duration: 3000,
+                position: 'top',
+                isClosable: true,
+            })
+        }  catch(err) {
+                toast({
+                    title: 'Error!',
+                    description: 'Error system, Delete Ads problem',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                })
+        }
+    }
+
     // Show ads details
     const ShowAds = async(idAds) => {
         // Details de l'annonce
@@ -81,11 +101,11 @@ const MesAnnonces = () => {
             });
             const formattedDate = timestampToDate(Number(data[2]))
             setdateDepot(formattedDate)
-            settimestampAd(data[2])
+            settimestampAd(Number(data[2]))
             setDetailAnnonce(data)
+            console.log(Number(idAds))
         }
         catch(err) {
-            console.log(err);
             toast({
                 title: 'Error!',
                 description: 'Problème pour afficher les détails',
@@ -106,7 +126,6 @@ const MesAnnonces = () => {
             setstakedamount(ethers.utils.formatEther(data2))
         }
         catch(err) {
-            console.log(err);
             toast({
                 title: 'Error',
                 description: 'Probleme pour afficher la balance',
@@ -127,7 +146,6 @@ const MesAnnonces = () => {
             setwithdrawPossible(ethers.utils.formatEther(data3))
         }
         catch(err) {
-            console.log(err);
             toast({
                 title: 'Error',
                 description: 'Problème sur la possibilité de retrait',
@@ -148,7 +166,7 @@ const MesAnnonces = () => {
             setbalanceBlopol(ethers.utils.formatEther(data4))
         }
         catch(err) {
-            console.log(err);
+
             toast({
                 title: 'Error',
                 description: 'Problème sur la possibilité de retrait',
@@ -158,8 +176,7 @@ const MesAnnonces = () => {
             })
         }
 
-
-
+        GetCommentByAd(Number(idAds))
     }
 
     // Ask for rewards Blopol
@@ -184,7 +201,7 @@ const MesAnnonces = () => {
                 isClosable: true,
             })
         }  catch(err) {
-            console.log(err)
+          
                 toast({
                     title: 'Error!',
                     description: 'Error system, Reward Blopol Panic',
@@ -217,10 +234,84 @@ const MesAnnonces = () => {
                 isClosable: true,
             })
         }  catch(err) {
-            console.log(err)
+           
                 toast({
                     title: 'Error!',
                     description: 'Error system, Withdraw function panic',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                })
+        }
+    }
+
+    // Get Comment by Ads
+    const GetCommentByAd = async(idAds) => {
+        try {
+            const data = await readContract({
+                address: contractAddress,
+                abi: Contract.abi,
+                functionName: "getCommentbyAd",
+                args: [Number(idAds)]
+            });
+       
+            setcomment(data)
+        }
+        catch(err) {
+            toast({
+                title: 'Error!',
+                description: 'Problème pour afficher les détails',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            })
+        }  
+        // Montant de la récompense
+        try {
+            const data2 = await readContract({
+                address: contractAddress,
+                abi: Contract.abi,
+                functionName: "getRewardForAd",
+                args: [Number(idAds)]
+            });
+            setreward(ethers.utils.formatEther(data2))
+        }
+        catch(err) {
+            toast({
+                title: 'Error!',
+                description: 'Problème pour afficher le montant des rewards',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            })
+        }        
+    }   
+
+    const SendRewardsToHelpers = async(idAds,index) => {
+        try {
+            const { request } = await prepareWriteContract({
+                address: contractAddress,
+                abi: Contract.abi,
+                functionName: "giveRewardComment",
+                account: addressAccount,
+                args: [Number(idAds),Number(index)],
+            });
+            await writeContract(request)
+            ShowAds(Number(idAds))
+
+            toast({
+                title: 'Récompense envoyée',
+                description: `La récompense à bien été envoyée avec succés`,
+                status: 'success',
+                duration: 3000,
+                position: 'top',
+                isClosable: true,
+            })
+        }  catch(err) {
+           
+                toast({
+                    title: 'Erreur',
+                    description: 'Reward already send',
                     status: 'error',
                     duration: 3000,
                     isClosable: true,
@@ -234,15 +325,9 @@ const MesAnnonces = () => {
         }
         LoadDataInPage()
     }, [])
-
-   /*
-    useEffect(() => {
-
-    }, [])
-    */
   return (
     <Flex width="80%" direction={["column", "column", "row", "row"]} alignItems={["center", "center", "flex-start", "flex-start"]} flexWrap="wrap">
-    
+
     {isConnected ? (
         <SimpleGrid columns={3} spacing={30}>
 
@@ -274,23 +359,57 @@ const MesAnnonces = () => {
                     {detailAnnonce.length > 0 ? (
                         <>
                         <FormLabel>
-                            <Badge colorScheme='purple'>Staked {stakedamount} MATIC</Badge>
+
+                            <Center><Badge colorScheme='purple'>Staked {stakedamount} MATIC</Badge></Center>
                             <Divider m={3}orientation='horizontal' />
-                            <Badge colorScheme='yellow'>{balanceBlopol} BLOPOL</Badge>
-                            <Button onClick={() => AskForRewards(Number(detailAnnonce[0]))} colorScheme='cyan' size='xs'>Réclamer</Button>
+                            <Center><Badge colorScheme='yellow'>{balanceBlopol} BLOPOL</Badge></Center>
+                            <Center><Text><Button onClick={() => AskForRewards(Number(detailAnnonce[0]))} 
+                                    colorScheme='yellow' size='xs'>Réclamer</Button></Text>
+                            </Center>
                         </FormLabel>
                         <Divider m={5}orientation='horizontal' />
-                        <Text as='b'>Annonce déposée le {dateDepot}</Text>
-                        <Text>{detailAnnonce[3]}</Text>
-                        <Text>Géolocalisation : {detailAnnonce[5]}</Text>
-                        <Divider m={4}orientation='horizontal' />
-                        {witdrawPossible != 0 ? (
-                            <Center><Text><Badge colorScheme='green'>{Number(witdrawPossible)} MATIC</Badge></Text>
-                                    <Button colorScheme='green' variant='outline' size='sm' 
-                                            onClick={() => Unstake(Number(detailAnnonce[0])) }>Retirer</Button></Center>
-                        ):(
-                            <Center><Button disabled colorScheme='red' variant='outline' size='sm'>Unstaking non possible</Button></Center>
-                        )}
+
+                            {timestampAd != 0 ? (
+                                <>
+                                <Text>
+                                <Popover returnFocusOnClose={false} isOpen={isOpen}  onClose={onClose} placement='right' closeOnBlur={false}>
+                                    <PopoverTrigger>
+                                        <Button size="xs" colorScheme='pink'>SUPPRIMER</Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent>
+                                    <PopoverHeader fontWeight='semibold'>Confirmation suppression annonce</PopoverHeader>
+                                    <PopoverArrow />
+                                    <PopoverCloseButton />
+                                    <PopoverBody>
+                                        Cette action est irreversible, etês vous sur de vouloir supprimer votre annonce de la plateforme ?
+                                    </PopoverBody>
+                                    <PopoverFooter display='flex' justifyContent='flex-end'>
+                                        <ButtonGroup size='sm'>
+                                        <Button colorScheme='red' variant='outline' size='xs'
+                                                onClick={() => DeleteMyAds(Number(detailAnnonce[0]))}>DELETE</Button>
+                                        </ButtonGroup>
+                                    </PopoverFooter>
+                                    </PopoverContent>
+                                </Popover>
+                                </Text>
+                                <Text as='b'>Postée le {dateDepot}</Text>
+                                <Text>{detailAnnonce[3]}</Text>
+                                <Text>Géolocalisation : {detailAnnonce[5]}</Text></>
+                            ):(
+                            <>
+                            <Text>Annonce supprimée de la plateforme Blopol</Text></>
+                            )}         
+
+                            <Divider m={4}orientation='horizontal' />
+                            {witdrawPossible != 0 ? (
+                                <><Center><Text><Badge colorScheme='green'>{Number(witdrawPossible)} MATIC</Badge></Text></Center><Center><Text>
+                                    <Button colorScheme='green' variant='outline' size='xs'
+                                                onClick={() => Unstake(Number(detailAnnonce[0]))}>Retirer</Button></Text></Center></>
+                            ):(
+                                <Center><Button disabled colorScheme='red' variant='outline' size='sm'>Unstaking non possible</Button></Center>
+                            )}
+
+
                         </>
                           
                     ) 
@@ -306,8 +425,26 @@ const MesAnnonces = () => {
             <Box  w='100%'>
                 <Card>
                     <CardBody>
-                        <FormLabel>COMMENTAIRES</FormLabel>
+                        <Center><FormLabel>COMMENTAIRES</FormLabel></Center>
+                      
+                        <Center><Badge colorScheme='purple'>Reward {reward} MATIC</Badge></Center>
                         <Divider m={5}orientation='horizontal' />
+                        {comment.length > 0 ? comment.map((event, index) => {
+                                let datec = timestampToDate(Number(event.commentDate))
+                                return <><Text><Badge colorScheme='purple'>{event.helpers}</Badge></Text>
+                                         <Text fontSize='sm'>Posté le {datec}</Text>
+                                         <Text fontSize='sm'>{event.information}</Text>
+                                         {event.flag ? (
+                                            <Center><Badge colorScheme='orange'>Payé</Badge></Center>
+                                            ):(
+                                            <Center><Button onClick={() => SendRewardsToHelpers(Number(detailAnnonce[0]),index)} colorScheme='purple' size='xs'>Récompenser</Button></Center>
+                                         )}
+                                         
+                                         <Divider m={2}orientation='horizontal' />
+                                        </>
+                            }) : (
+                                <Text>Aucun commentaire pour le moment...</Text> 
+                            )}
                     </CardBody>
                 </Card>
             </Box>

@@ -2,7 +2,7 @@
 import NotConnected from '../components/NotConnected/NotConnected'
 import { Center } from '@chakra-ui/react'
 import { SimpleGrid, Box, Input, Select, FormLabel, FormControl,
-         Button,Card,CardBody,Text,Flex, Heading } from '@chakra-ui/react'
+         Button,Card,CardBody,Text,Divider, Heading } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
 import { hardhat } from 'wagmi/chains';
 import { useState, useEffect } from 'react'
@@ -26,21 +26,17 @@ const createad = () => {
     const [titleAds, settitleAds] = useState("")
     const [geolocAds, setgeolocAds] = useState("")
     const [idcatAds, setidcatAds] = useState("")
-    const [maticPriceFeed,setmaticPriceFeed] = useState('')
-    const [am,setam] = useState(0)
+    const [maticPriceFeed,setmaticPriceFeed] = useState(null)
     
     // Check Oracle to give SoftCap minimum Price
     const giveSoftCap = async() => {
-        if ( titleAds!= '' && idcatAds != '' && geolocAds !=''){
-            
+        if ( titleAds!= '' && idcatAds != '' && geolocAds !=''){         
             try {
                 const data = await readContract({
                     address: contractAddress,
                     abi: Contract.abi,
                     functionName: "displayAmountForDepositAd",
                 });
-                console.log(data);
-                console.log('SoftCap: ' + ethers.utils.formatEther(data))
                 toast({
                     title: 'Prix mise à jour',
                     description: `Oracle Chainlink`,
@@ -49,11 +45,9 @@ const createad = () => {
                     position: 'top',
                     isClosable: true,
                 })
-                setam(data)
                 setmaticPriceFeed(ethers.utils.formatEther(data))
             }
             catch(err) {
-                console.log(err);
                 toast({
                     title: 'Error!',
                     description: 'Un erreur est survenue',
@@ -76,60 +70,69 @@ const createad = () => {
 
     // Add Ads
     const addNewAds = async() => {
-        let timestamp = Math.floor(Date.now() / 1000);
-        const ads = { idAds: 0,
-            ownerAds: addressAccount,
-            depositAds: timestamp,
-            titleAds: titleAds,
-            idcatAds: idcatAds,
-            geolocAds: geolocAds
-        }
-        let mv = ethers.utils.parseEther(maticPriceFeed)
-        const rwd = { idAds: 0,amountReward: mv }
+        if ( titleAds!= '' && idcatAds != '' && geolocAds !=''){  
+            let timestamp = Math.floor(Date.now() / 1000);
+            const ads = { idAds: 0,
+                ownerAds: addressAccount,
+                depositAds: timestamp,
+                titleAds: titleAds,
+                idcatAds: idcatAds,
+                geolocAds: geolocAds
+            }
+            let mv = ethers.utils.parseEther(maticPriceFeed)
+            const rwd = { idAds: 0,amountReward: mv }
 
-        try {
-            const { request } = await prepareWriteContract({
-                address: contractAddress,
-                abi: Contract.abi,
-                functionName: "paymentAds",
-                args: [ads,rwd],
-                value: mv
-            });
-            await writeContract(request)
-            
-            toast({
-                title: 'Annonce déposée sur BLOPOL',
-                description: `Votre annonce à bien été déposée sur la plateforme BLOPOL`,
-                status: 'success',
-                duration: 3000,
-                position: 'top',
-                isClosable: true,
-            })
-        }  catch(err) {
-            console.log(err)
+            try {
+                const { request } = await prepareWriteContract({
+                    address: contractAddress,
+                    abi: Contract.abi,
+                    functionName: "paymentAds",
+                    args: [ads,rwd],
+                    value: mv
+                });
+                await writeContract(request)
+                setmaticPriceFeed(null)
+                setgeolocAds('')
+                setidcatAds('')
+                settitleAds('')
                 toast({
-                    title: 'Error!',
-                    description: 'Error system, contact Administrator',
-                    status: 'error',
+                    title: 'Annonce déposée sur BLOPOL',
+                    description: `Votre annonce à bien été déposée sur la plateforme BLOPOL`,
+                    status: 'success',
                     duration: 3000,
+                    position: 'top',
                     isClosable: true,
                 })
-        }
-        
+            }  catch(err) {
+                    toast({
+                        title: 'Error!',
+                        description: 'Error system, contact Administrator',
+                        status: 'error',
+                        duration: 3000,
+                        isClosable: true,
+                    })
+            }
+        } else {
+            toast({
+                title: 'Champs Obligatoire',
+                description: "Vous devez remplir tous les champs de l'annonce",
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            })
+        }    
     }
-
-    useEffect(() => {
-       
-    }, [])
 
     return (
     <>
         <Center>
-         <h1>Création de votre annonce</h1>
+         <Heading mb={10}>CREATION  DE VOTRE ANNONCE</Heading>
         </Center>
         {isConnected ? (
         <SimpleGrid columns={2} spacing={30}>
                 <Box  w='100%'>
+                <Card>
+                    <CardBody>
                     <FormLabel>COMPLETER LES CHAMPS CI-DESSOUS</FormLabel>
                         <FormControl>
                             <Box m={[2, 3]}>
@@ -154,35 +157,33 @@ const createad = () => {
                                     CALCUL DU MONTANT DE L'ANNONCE
                                 </Button>
                             </Box>
-                    </Box>
-                    <Box  w='100%'><h2>INFORMATION SUR L'ANNONCE</h2>
+                        </CardBody>
+                </Card>
+                </Box>
+                <Box  w='100%'>
                     <Card>
                         <CardBody>
-                          <Text>
-                                <h2>Montant minimum pour déposer une Annonce</h2>
-                                <p>Blopol vous propose de fixer le montant de la récompense qui sera donner
-                                    à la personne vous ayant aider à retourver votre objet volé ou perdu.
-                                </p>
-                                <p>Un montant minimum est cepandant requis pour déposer l'annonce.</p>
-                                <p>Votre récompense sera bloquée en staking, vous pourrez récupérer l'intégralité
-                                    de la récompense si vous n'avez pas pu retrouver votre objet.
-                                </p>
-                          </Text>
-                          <Text>
-
-                            <Input placeholder="Calcul du montant minimal de l'annonce" value={maticPriceFeed} 
-                                   onChange={(e) => setmaticPriceFeed(e.target.value)}/>
-                            <Box m={[2, 3]}>
-
                             {maticPriceFeed > 0  ? (
-                                <Button onClick={() => addNewAds()} colorScheme="orange">
-                                    REGLER MON ANNONCE
-                                </Button>
+                                <Text>
+                                    <Input placeholder="Calcul du montant minimal de l'annonce" value={maticPriceFeed} 
+                                    onChange={(e) => setmaticPriceFeed(e.target.value)}/>
+                                    <Box m={[2, 3]}>
+                                        <Button onClick={() => addNewAds()} colorScheme="orange">
+                                            REGLER MON ANNONCE
+                                        </Button>
+                                    </Box>
+                                </Text>
                             ) : (
                                 <Button disabled>REGLER MON ANNONCE</Button>
                             )}
                                
-                            </Box>
+                            
+                            <Divider m={5}orientation='horizontal' />
+                          <Text fontSize='sm' as='b'>
+                                
+                                <p>Blopol vous propose de fixer le montant de la récompense qui sera donné à la personne vous ayant aidé à retrouver votre objet volé ou perdu.</p>
+                                <p>Un montant minimum est cependant requis pour déposer l’annonce.</p>
+                                <p>Votre récompense sera bloquée en staking, vous pourrez récupérer l’intégralité de la récompense si vous n’avez pas pu retrouver votre objet.</p>
                           </Text>
                         </CardBody>
                       </Card>
