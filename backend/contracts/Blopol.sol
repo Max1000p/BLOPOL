@@ -190,19 +190,13 @@ contract Blopol is Ownable, ReentrancyGuard {
         emit CreateAds(msg.sender, _currentCounter, _depositAds, _titleAds, _geolocAds);
     }
     
-    ///@notice Display an ads by Id
+    ///@notice Display an ads by Id, update balance Token reward for Ads Id
     ///@param _idAds Identifier Ads
     ///@return uint, address, uint, string memory, uint, string memory in array
     function getAdsById(uint _idAds) external view returns (uint, address, uint, string memory, uint, string memory) {
+        require(adsArray[_idAds].idAds >= 0, "Ad not exists");
         Ads memory ads = adsArray[_idAds];
         return (ads.idAds, ads.ownerAds, ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
-    }
-
-    ///@notice for creator, display reward amount initial
-    ///@param _idAds Identifier Ads
-    ///@return amountReward
-    function getRewardInitial(uint _idAds) external checkAdsRecord(_idAds) view returns(uint){
-        return rwd[_idAds].amountReward;
     }
 
     /// @notice Add Reward in Ads, mapping structure
@@ -223,6 +217,12 @@ contract Blopol is Ownable, ReentrancyGuard {
         comments[_idAds].push(newComment);
         helpersAds[msg.sender].push(_idAds);
         emit AddComment(_idAds,msg.sender);
+    }
+
+    ///@notice Give all comments by ads
+    function getCommentbyAd(uint _idAds) external view returns(Comments[] memory) {
+       // require(comments[_idAds], "Comment not exists");
+        return comments[_idAds];
     }
 
     /// @notice function to calculate how much percentage reward can be sent to helpers
@@ -256,7 +256,7 @@ contract Blopol is Ownable, ReentrancyGuard {
         return _calculatePercentage(rwd[_idAd].amountReward,r);
     }
 
-    /// @notice display reward amount for helpers with calcul range / percentage / duration
+    /// @notice display reward amount for an Ads with calcul range / percentage / duration
     /// @param _idAd Identifier Ads
     /// @return amount of reward
     function getRewardForAd(uint _idAd) external view returns(uint){
@@ -283,6 +283,9 @@ contract Blopol is Ownable, ReentrancyGuard {
         // Fonction de remboursement et non de transfert
         (bool success, ) = comments[_idAd][_index].helpers.call{value: amount}("");
         require(success);
+
+        _updateReward(msg.sender, _idAd);
+
         emit RewardReceived(_idAd,comments[_idAd][_index].helpers,amount);
 
     }
@@ -324,7 +327,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Split payment with fees amount (blopolsWallet) and reward amount, store information in staking(stakingtokens) wallet by Ad
     /// @notice Stake amount for calcul reward for staker
     /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
-    function paymentAds(Ads calldata ads, RewardAds calldata rwd) external payable {
+    function paymentAds(Ads calldata ads, RewardAds calldata) external payable {
         uint mpaid = (_softCap * priceFeed().mul(10**10))+(_fees * priceFeed().mul(10**10));
         require(msg.value >= mpaid, "Price minimum required");
         uint feesInTime = _fees * priceFeed().mul(10**10);
@@ -560,10 +563,17 @@ contract Blopol is Ownable, ReentrancyGuard {
     function cancelMyAds(uint _idAd) external payable checkAdsRecord(_idAd) nonReentrant{
         require(stakingtokens[msg.sender][_idAd].amount >= 0, "no funds to Withdraw");
         uint amount = stakingtokens[msg.sender][_idAd].amount;
+       
+        if(stakingtokens[msg.sender][_idAd].amount > 0){
+            (bool success, ) = msg.sender.call{value: amount}("");
+            require(success);
+        }
+
         stakingtokens[msg.sender][_idAd].amount -= amount;
         totalSupply -= amount;
-        (bool success, ) = msg.sender.call{value: amount}("");
-        require(success);
+        rwd[_idAd].amountReward = 0;
+        
+        delete adsArray[_idAd];
         emit CancelAdd(_idAd, msg.sender, amount);
     }
 
@@ -580,12 +590,12 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev TokenBlopol utility DAO later
     /// @dev Update reward for user 
     function getReward(uint _idAd) external checkAdsRecord(_idAd) nonReentrant {
+        _updateReward(msg.sender, _idAd);
         uint reward = rewards[msg.sender][_idAd];
         if (reward > 0) {
             rewards[msg.sender][_idAd] = 0;
             rewardsToken.transfer(msg.sender, reward);
         }
-        _updateReward(msg.sender, _idAd);
     }
 
     ///@dev Math to give x or y by operator

@@ -1,22 +1,27 @@
-// Importer les modules nécessaires
-const { ethers } = require('hardhat');
+const { ethers } = require("hardhat")
 
+// Populate on local testnet for comments user on Ads 0
 async function main() {
-    // Récupérer l'objet HRE (Hardhat Runtime Environment)
-    const hre = require('hardhat');
-    const { deployments, getNamedAccounts } = hre;
+    let owner, addr1, addr2;
 
-    // Obtenir les comptes nommés
-    const { deployer, user1, user2 } = await getNamedAccounts();
-    // Déployer le premier contrat
+    [owner, addr1, addr2] = await ethers.getSigners();
 
-    const tokenblopoladdress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-    // Initialize Smart Contract
-    const blopolContract = await ethers.getContractFactory("Blopol");
-    const instance = await blopolContract.attach(blopolAddress);
-    
+
+    const instance = await hre.ethers.getContractAt("Blopol", "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512");
+
     let timestamp = Math.floor(Date.now() / 1000);
-    // Add comment
-    await instance.addComment(0,timestamp,"Objet retrouvé en face du square vers la plage de Palavas les Flots", {from: user2});
-    await instance.addComment(0,timestamp,"Objet aperçu en face d'un bar sur la cote d'Azur",{from: user1});
+    let transaction = instance.connect(addr1).addComment(0,timestamp,"Objet retrouvé en face du square vers la plage de Palavas les Flots");
+    transaction = await instance.connect(connect).addComment(0,timestamp,"Objet aperçu en face d'un bar sur la cote d'Azur");
+   
+    console.log();
+    let comment = await instance.connect(owner).getCommentbyAd(0);
+    console.log(comment);
+
 }
+
+main()
+    .then(() => process.exit(0)) 
+    .catch((error) => {
+        console.error(error)
+        process.exit(1)
+    })
