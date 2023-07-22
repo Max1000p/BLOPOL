@@ -75,7 +75,7 @@ const createad = () => {
 
         if ( titleAds!= '' && idcatAds != '' && geolocAds !=''){  
             
-            if(maticPriceFeed < oraclePrice){
+            if ( Number(maticPriceFeed) <  Number(oraclePrice)) {
                 toast({
                     title: 'Prix minimum requis',
                     description: "Le prix que vous avez entrez est insuffisant pour le dépôt de l'annonce",
