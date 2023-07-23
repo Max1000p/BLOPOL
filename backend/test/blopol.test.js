@@ -284,14 +284,18 @@ contract('Blopol', accounts => {
 
         })
 
-        describe("Send comments, send reward for helpers", function () {
+        describe("function getComment, addComment, give reward for helpers", function () {
             context("Add a comment", function () {
                 
                 it("User can't add a comment if ad not exist", async () => {
-                    await expectRevert(instance.addComment(new BN(10),1690035945,"Commentaires sur annonce 9", {from: second}), "Ad not exists");
-                   // console.log(storedData);
+                    await expectRevert(instance.addComment(new BN(10),1690035945,"Comment on ads not exist", {from: second}), "Ad not exists");
                 });
 
+                it("User can add a comment if ad exist", async () => {
+                    await instance.addComment(new BN(8),1690035945,"Comment 1 on ads number 8 ",{from: second});
+                    const storedData = await instance.getCommentbyAd(new BN(8),{from: second});
+                    expect(storedData.length).to.be.equal(1);
+                });
             })
         })
 

@@ -288,35 +288,47 @@ const MesAnnonces = () => {
     }   
 
     const SendRewardsToHelpers = async(idAds,index) => {
-        try {
-            const { request } = await prepareWriteContract({
-                address: contractAddress,
-                abi: Contract.abi,
-                functionName: "giveRewardComment",
-                account: addressAccount,
-                args: [Number(idAds),Number(index)],
-            });
-            await writeContract(request)
-            ShowAds(Number(idAds))
-
+        if(reward == Number(0)){
             toast({
-                title: 'Récompense envoyée',
-                description: `La récompense à bien été envoyée avec succés`,
-                status: 'success',
+                title: 'Récompense déjà distribuée',
+                description: 'Vous ne pouvez plus récompenser vos informateurs, les fonds bloqué ont été dépensés',
+                status: 'error',
                 duration: 3000,
-                position: 'top',
                 isClosable: true,
             })
-        }  catch(err) {
-           
+        } else{
+            try {
+                const { request } = await prepareWriteContract({
+                    address: contractAddress,
+                    abi: Contract.abi,
+                    functionName: "giveRewardComment",
+                    account: addressAccount,
+                    args: [Number(idAds),Number(index)],
+                });
+                await writeContract(request)
+                ShowAds(Number(idAds))
+    
                 toast({
-                    title: 'Erreur',
-                    description: 'Reward already send',
-                    status: 'error',
+                    title: 'Récompense envoyée',
+                    description: `La récompense à bien été envoyée avec succés`,
+                    status: 'success',
                     duration: 3000,
+                    position: 'top',
                     isClosable: true,
                 })
+            }  catch(err) {
+               
+                    toast({
+                        title: 'Erreur',
+                        description: 'Reward already send',
+                        status: 'error',
+                        duration: 3000,
+                        isClosable: true,
+                    })
+            }
         }
+        
+        
     }
 
     useEffect(() => {

@@ -222,7 +222,6 @@ contract Blopol is Ownable, ReentrancyGuard {
 
     ///@notice Give all comments by ads
     function getCommentbyAd(uint _idAds) external view returns(Comments[] memory) {
-       // require(comments[_idAds], "Comment not exists");
         return comments[_idAds];
     }
 
