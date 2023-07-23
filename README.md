@@ -1,28 +1,20 @@
 # BLOPOL
 ## Une solution décentralisée pour les produits volés ou perdus
-Tools > TRUFFLE
 
-## Description 
+## Description et fonctionnalités
 
-Vote process : 
+POC - Fonctionnalités dévelopées : 
 
-- The voting administrator registers a whitelist of voters identified by their Ethereum address.
+- Connexion avec l'oracle Chainlink pour le calcul du SoftCap de l'application
+<https://blopol-app-2023.vercel.app/>
 
-- The voting administrator starts the recording session of the proposal.
+- Dépot d'une annonce
+- Paiement d'une annonce
+- Système de staking et unstaking avec récompense en token de la plateforme Blopol
+- Système de commentaires pour validation des rewards informateur
+- Système de reward degressif pour les informateurs
+- Suppression de l'annonce
 
-- Registered voters are allowed to register their proposals while the registration session is active.
-
-- The voting administrator terminates the proposal recording session.
-
-- The voting administrator starts the voting session.
-
-- Registered voters vote for their preferred proposal.
-
-- The voting administrator ends the voting session.
-
-- The voting administrator counts the votes.
-
-- Everyone can check the final details of the winning proposal.
 
 
 ## Run tests
