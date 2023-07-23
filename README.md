@@ -18,6 +18,19 @@ Source Code branche deploy : https://github.com/Max1000p/BLOPOL/blob/deploy/back
 - Système de reward degressif pour les informateurs
 - Suppression de l'annonce
 
+## Déploiement des scripts
+Déployer les contrats :
+
+```bash
+yarn hardhat run ./scripts/01_deploy.js --network localhost
+```
+
+Setup de l'application : 
+```bash
+yarn hardhat run ./scripts/02_interact.js --network localhost
+```
+
+
 
 ## Stack technique
 HARDHAT + SOLIDITY + NEXTJS + RainbowKit + WAGMI + VIEM
