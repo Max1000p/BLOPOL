@@ -7,7 +7,7 @@ async function main() {
     const { deployments, getNamedAccounts } = hre;
 
     // Obtenir les comptes nommés
-    const { deployer, user1, user2 } = await getNamedAccounts();
+    const { deployer } = await getNamedAccounts();
     // Déployer le premier contrat
 
     const blopolAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
@@ -31,15 +31,15 @@ async function main() {
     await instanceToken.mint(blopolAddress, 10000);  // Ne fonctionne pas
     const balanceBlopol = instanceToken.balanceOf(blopolAddress); // Ne fonctionne pas > Natif a l ERC20
     console.log('Balance token blopol in smart contract ' + balanceBlopol.toString());
+    // Set rate for staking 10 000 (7Days / 10000000000000000000)
+    await instance.notifyRewardAmount(1000000000000000);
     // Category management - Start idCat to 0
     await instance.addCategory("MONTRES");
     await instance.addCategory("TELEPHONES");
     const cat0 = await instance.getCategory(0);
     console.log("Category 0 = " + cat0);
     const cat1 = await instance.getCategory(1);
-    console.log("Category 1 = " + cat1);
-
-    
+    console.log("Category 1 = " + cat1);    
 }
   
 // Exécuter la fonction principale

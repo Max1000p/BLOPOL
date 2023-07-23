@@ -1,16 +1,13 @@
 "use client"
-import '@rainbow-me/rainbowkit/styles.css';
+import '@rainbow-me/rainbowkit/styles.css'
 import Header from "./components/Header/Header"
 import { ThemeContextProvider } from '@/context/theme';
-import {getDefaultWallets,RainbowKitProvider,} from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { hardhat } from 'wagmi/chains';
-import { polygon } from 'wagmi/chains';
+import {getDefaultWallets,RainbowKitProvider,} from '@rainbow-me/rainbowkit'
+import { configureChains, createConfig, WagmiConfig } from 'wagmi'
+import { hardhat } from 'wagmi/chains'
 
-import { publicProvider } from 'wagmi/providers/public';
+import { publicProvider } from 'wagmi/providers/public'
 import { ChakraProvider } from '@chakra-ui/react'
-
-
 
 const { chains, publicClient } = configureChains(
   [hardhat],[ publicProvider()]
@@ -23,7 +20,7 @@ const { connectors } = getDefaultWallets({
 });
 
 const wagmiConfig = createConfig({
-  autoConnect: false,
+  autoConnect: true,
   connectors,
   publicClient
 })

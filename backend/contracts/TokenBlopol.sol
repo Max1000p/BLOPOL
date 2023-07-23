@@ -15,12 +15,4 @@ contract TokenBlopol is ERC20, Ownable {
         _mint(to, amount* 10**18);
     }
 
-    function calling() public pure returns(uint){
-        return 588910;
-    }
-
-    fallback() external {
-
-    }
-
 }

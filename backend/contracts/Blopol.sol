@@ -26,7 +26,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Reward to be paid out per second
     uint public rewardRate;
     //// @notice Sum of (reward rate * dt * 1e18 / total supply)
-    uint public rewardPerTokenStored;
+    uint rewardPerTokenStored;
     /// @notice Counter for AD
     uint public counterId;
     /// @notice Counter for Category
@@ -159,13 +159,8 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @param  _idAd identifier Ads
     /// @return deposit date of Ads
     function _getAdsDepositDate(uint _idAd) private view returns(uint){
-        console.log('_getdeposfunction');
-        console.log(_idAd);
         for (uint i = 0; i < adsArray.length; i++) {
-            console.log(adsArray[i].idAds);
             if (adsArray[i].idAds == _idAd) {
-                
-                console.log(adsArray[i].depositAds);
                 return adsArray[i].depositAds;
             }
         }
@@ -190,19 +185,13 @@ contract Blopol is Ownable, ReentrancyGuard {
         emit CreateAds(msg.sender, _currentCounter, _depositAds, _titleAds, _geolocAds);
     }
     
-    ///@notice Display an ads by Id
+    ///@notice Display an ads by Id, update balance Token reward for Ads Id
     ///@param _idAds Identifier Ads
     ///@return uint, address, uint, string memory, uint, string memory in array
     function getAdsById(uint _idAds) external view returns (uint, address, uint, string memory, uint, string memory) {
+        require(_idAds < adsArray.length, "Ad not exists");
         Ads memory ads = adsArray[_idAds];
         return (ads.idAds, ads.ownerAds, ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
-    }
-
-    ///@notice for creator, display reward amount initial
-    ///@param _idAds Identifier Ads
-    ///@return amountReward
-    function getRewardInitial(uint _idAds) external checkAdsRecord(_idAds) view returns(uint){
-        return rwd[_idAds].amountReward;
     }
 
     /// @notice Add Reward in Ads, mapping structure
@@ -219,10 +208,16 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev mapping helperAds to display all this comment for Ads in platform
     function addComment(uint _idAds,uint _commentDate,string calldata _information) external payable {
         require(msg.sender != address(0), "Wrong address");
+        require(_idAds < adsArray.length, "Ad not exists");
         Comments memory newComment = Comments(_commentDate,msg.sender,_information,false);
         comments[_idAds].push(newComment);
         helpersAds[msg.sender].push(_idAds);
         emit AddComment(_idAds,msg.sender);
+    }
+
+    ///@notice Give all comments by ads
+    function getCommentbyAd(uint _idAds) external view returns(Comments[] memory) {
+        return comments[_idAds];
     }
 
     /// @notice function to calculate how much percentage reward can be sent to helpers
@@ -256,7 +251,7 @@ contract Blopol is Ownable, ReentrancyGuard {
         return _calculatePercentage(rwd[_idAd].amountReward,r);
     }
 
-    /// @notice display reward amount for helpers with calcul range / percentage / duration
+    /// @notice display reward amount for an Ads with calcul range / percentage / duration
     /// @param _idAd Identifier Ads
     /// @return amount of reward
     function getRewardForAd(uint _idAd) external view returns(uint){
@@ -271,8 +266,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     function giveRewardComment(uint _idAd, uint _index) external checkAdsRecord(_idAd) payable nonReentrant{
         uint amount = _calculRewardForAd(_idAd);
         require(rwd[_idAd].amountReward > 0, "Reward already send");
-        require(stakingtokens[msg.sender][_idAd].amount >= amount, "not enough funds");
-        require(amount > 0, "not possible");
         comments[_idAd][_index].flag = true;
 
         stakingtokens[msg.sender][_idAd].amount -= amount;
@@ -283,6 +276,9 @@ contract Blopol is Ownable, ReentrancyGuard {
         // Fonction de remboursement et non de transfert
         (bool success, ) = comments[_idAd][_index].helpers.call{value: amount}("");
         require(success);
+
+        _updateReward(msg.sender, _idAd);
+
         emit RewardReceived(_idAd,comments[_idAd][_index].helpers,amount);
 
     }
@@ -302,7 +298,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     
     /// @notice call function to return reward per token with totalSupply sum 
     /// @return reward per Token stored
-    function rewardPerToken() public view returns (uint) {
+    function _rewardPerToken() private view returns (uint) {
         if (totalSupply == 0) {
             return rewardPerTokenStored;
         }
@@ -314,8 +310,8 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev useful in frontend to display minimum amount for deposit
     /// @return Total amount minimum, user can add more for rewards 
     function displayAmountForDepositAd() external view returns(uint){
-        uint amountFees = _fees * priceFeed().mul(10**10);
-        uint amountSoftCap = _softCap * priceFeed().mul(10**10);
+        uint amountFees = _fees * (10**18 / priceFeed()) * (10**8);
+        uint amountSoftCap = _softCap * (10**18 / priceFeed()) * (10**8);
         return amountFees + amountSoftCap;
     }
 
@@ -324,15 +320,14 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Split payment with fees amount (blopolsWallet) and reward amount, store information in staking(stakingtokens) wallet by Ad
     /// @notice Stake amount for calcul reward for staker
     /// @dev principal function to store Ads onchain, mpaid is minimal price, user amount need to be bigger or equal
-    function paymentAds(Ads calldata ads, RewardAds calldata rwd) external payable {
-        uint mpaid = (_softCap * priceFeed().mul(10**10))+(_fees * priceFeed().mul(10**10));
+    function paymentAds(Ads calldata ads, RewardAds calldata) external payable {
+        uint mpaid = (_softCap * (10**18 / priceFeed()) * (10**8))+(_fees * (10**18 / priceFeed()) * (10**8));
         require(msg.value >= mpaid, "Price minimum required");
-        uint feesInTime = _fees * priceFeed().mul(10**10);
+        uint feesInTime = _fees * (10**18 / priceFeed()) * (10**8);
         uint rewardStaking = msg.value - feesInTime;
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
         _addRewardAds(counterId, rewardStaking);
-
         StakingToken storage data = stakingtokens[msg.sender][counterId];
         if (data.walletAdAddress == address(0)){
              data.walletAdAddress = msg.sender;
@@ -352,7 +347,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @param _walletAdAddress Address Staker, _idAd Slot staking ads
     function _updateReward(address _walletAdAddress, uint256 _idAd) private {
         // Traitement de cette données
-        rewardPerTokenStored = rewardPerToken();
+        rewardPerTokenStored = _rewardPerToken();
         updatedAt = lastTimeRewardApplicable();
 
         if (_walletAdAddress != address(0)) {
@@ -417,10 +412,8 @@ contract Blopol is Ownable, ReentrancyGuard {
                 stepWithdraw += withdrawArray[i].stepWithdraw;
             }
         }
-        console.log('Send idAd =');
-        console.log(_idAd);
+
         uint nbDepositDay = getDiffDayAd(_getAdsDepositDate(_idAd));
-        console.log(nbDepositDay);
         if (countWithdrawal == 0){
 
             if( nbDepositDay < STEP_0_7_DAYS){
@@ -497,20 +490,13 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice depend range and SoftCap
     /// @return amount withdraw if criteria time and sofcap are good
     function _calcWithdrawAmountPossible(uint _idAd) private view returns(uint){
-        console.log("rentre dans la fonction");
         uint rate = _percentAuthorizeWithdrawByAd(_idAd) * 10**18;
-        console.log(rate);
         if (rate > 0){
             uint rw = rwd[_idAd].amountReward;
             uint amr = rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate);
-            uint sfc = (_softCap * priceFeed().mul(10**10));
-            console.log(rw);
-            console.log(amr);
-            console.log(sfc);
+            uint sfc = (_softCap * (10**18 / priceFeed()) * (10**8));
             
-            if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * priceFeed().mul(10**10)) ){
-                
-                
+            if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * (10**18 / priceFeed()) * (10**8))){
                 return 0; 
             } else { 
                 return _calculatePercentage(rwd[_idAd].amountReward,rate); 
@@ -558,12 +544,18 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Delete an Ads, delete all data for this Ads
     /// @dev TODO remove all entry to clean storage
     function cancelMyAds(uint _idAd) external payable checkAdsRecord(_idAd) nonReentrant{
-        require(stakingtokens[msg.sender][_idAd].amount >= 0, "no funds to Withdraw");
         uint amount = stakingtokens[msg.sender][_idAd].amount;
+        
         stakingtokens[msg.sender][_idAd].amount -= amount;
         totalSupply -= amount;
-        (bool success, ) = msg.sender.call{value: amount}("");
-        require(success);
+        rwd[_idAd].amountReward = 0;
+        
+        if(amount > 0){
+            (bool success, ) = msg.sender.call{value: amount}("");
+            require(success);
+        }
+
+        delete adsArray[_idAd];
         emit CancelAdd(_idAd, msg.sender, amount);
     }
 
@@ -572,7 +564,7 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @return amount earned calculate by staking function 
     function _earned(address _walletAdAddress, uint256 _idAd) private view returns (uint256) {
         return  (stakingtokens[_walletAdAddress][_idAd].amount * 
-                (rewardPerToken() - userRewardPerTokenPaid[_walletAdAddress][_idAd])) / 1e18 + 
+                (_rewardPerToken() - userRewardPerTokenPaid[_walletAdAddress][_idAd])) / 1e18 + 
                 rewards[_walletAdAddress][_idAd];
     }
 
@@ -580,12 +572,12 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @dev TokenBlopol utility DAO later
     /// @dev Update reward for user 
     function getReward(uint _idAd) external checkAdsRecord(_idAd) nonReentrant {
+        _updateReward(msg.sender, _idAd);
         uint reward = rewards[msg.sender][_idAd];
         if (reward > 0) {
             rewards[msg.sender][_idAd] = 0;
             rewardsToken.transfer(msg.sender, reward);
         }
-        _updateReward(msg.sender, _idAd);
     }
 
     ///@dev Math to give x or y by operator
@@ -676,6 +668,12 @@ contract Blopol is Ownable, ReentrancyGuard {
         require(address(this).balance > 0, "No cash in SmartContract");
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success);
+    }
+
+     /// @dev Special admin to test range and percentage / withDraw function
+     /// @dev to be deleted for production mainnet
+    function modifyAds(uint _id, uint _date) external onlyOwner {
+        adsArray[_id].depositAds = _date;
     }
     /*------------ ADMIN FUNCTIONS ------------------------------*/
 
