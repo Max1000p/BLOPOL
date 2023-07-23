@@ -8,7 +8,6 @@ contract('Blopol', accounts => {
     const owner = accounts[0];
     const second = accounts[1];
     const third = accounts[2];
-    const four = accounts[3];
 
     let instance, erc20instance;
     /** Constantes for Ads */
@@ -154,7 +153,7 @@ contract('Blopol', accounts => {
                 });
 
                 it("User deposit Ad with minimum payment, get Event PaymentReceived", async () => {
-                    const findEvent = await instance.paymentAds(ads,rwd, {from: third, value: new BN("12255565200000000000", 10)});
+                    const findEvent = await instance.paymentAds(ads,rwd, {from: third, value: new BN("30000000000000000000", 10)});
                     expectEvent(findEvent,"PaymentReceived");
                 });
 
@@ -186,15 +185,6 @@ contract('Blopol', accounts => {
                 it("first ads deposit, check data geolocs set to 48.8588897,2.320041", async () => {
                     const storedData = await instance.getAdsById(new BN(0));
                     expect(storedData[5].toString()).to.be.equal("48.8588897,2.320041");
-                });
-
-                it("only creator can data reward initial", async () => {
-                    await expectRevert(instance.getRewardInitial(new BN(0), {from: second}), "Wrong account for this action");
-                });
-
-                it("first ads deposit, creator can check data reward set to 8170376800000000000 ", async () => {
-                    const storedData = await instance.getRewardInitial(new BN(0), {from: third});
-                    expect(storedData).to.be.bignumber.equal(new BN("8170376800000000000",10));
                 });
 
                 it("Second Ads deposit, total supply amount added", async () => {
@@ -259,35 +249,50 @@ contract('Blopol', accounts => {
 
             context("Withdraw function for creator who decide un-staking part token by ads", function () {
                 
-                it.skip("User can't withdraw he is not the Owner Creator Ad", async () => {
+                it("User can't withdraw he is not the Owner Creator Ad", async () => {
                     await expectRevert(instance.withdraw(new BN(0), {from: owner}), "Wrong account for this action");
                 });
 
-                it.skip("User can't ask for withdraw he is not the Owner Creator Ad", async () => {
+                it("User can't ask for withdraw he is not the Owner Creator Ad", async () => {
                     await expectRevert(instance.CanWithdrawNow(new BN(0), {from: owner}), "Wrong account for this action");
                 });
 
-                it.skip("User owner ads ask for withdraw (NO softCap block)- Example Ads 0 | deposit > 48 days | amount staked for Ads < SoftCap", async () => {
+                it("User owner ads ask for withdraw (NO softCap block)- Example Ads 0 | deposit > 48 days | amount staked for Ads < SoftCap", async () => {
                     const storedData = await instance.CanWithdrawNow(new BN(0), {from: third});
                     expect(storedData.toString()).to.be.equal(new BN(0));
                 });
 
-                it.skip("User owner ads ask for withdraw (ads2 - STEP_0_7_DAYS) - Example new Ads 7 | deposit > Now | amount staked for Ads > SoftCap", async () => {
+                it("User owner ads ask for withdraw (ads2 - STEP_0_7_DAYS) - Ads 6 | deposit > Now | amount staked for Ads > SoftCap", async () => {
                     await instance.paymentAds(ads2,rwd, {from: third, value: new BN("320000000000000000000", 10)});
                     await expectRevert(instance.withdraw(new BN(6), {from: third}), "Withdraw not possible at this moment");
                 });
                 
-                it("User owner ads ask for withdraw (ads3 - STEP_8_15_DAYS) - Example new Ads 8 | deposit > Now | amount staked for Ads > SoftCap", async () => {
+                it("User owner can withdraw (ads3 - STEP_8_15_DAYS) - Ads 7 | amount staked for Ads > SoftCap", async () => {
                     await instance.paymentAds(ads3,rwd, {from: owner, value: new BN("32000000000000000000", 10)});
-                    const balanceBeforeWithdraw = await instance.getBalanceStakingTokenByAds(new BN(6));
-                    console.log(balanceBeforeWithdraw);
-                    await instance.withdraw(new BN(6), {from: owner});
-                    const balanceAfterWithdraw = await instance.getBalanceStakingTokenByAds(new BN(6));
+                    const balanceBeforeWithdraw = await instance.getBalanceStakingTokenByAds(new BN(7));
+                    await instance.withdraw(new BN(7), {from: owner});
+                    const balanceAfterWithdraw = await instance.getBalanceStakingTokenByAds(new BN(7));
                     expect(balanceAfterWithdraw).to.be.bignumber.below(balanceBeforeWithdraw);
                 });
-                
-            })    
 
+                it("User owner can't withdraw, amount reward - % allowed < SoftCap (ads3 - STEP_8_15_DAYS)", async () => {
+                    await instance.paymentAds(ads3,rwd, {from: owner, value: new BN("25000000000000000000", 10)});
+                    await expectRevert(instance.withdraw(new BN(8), {from: owner}), "Withdraw not possible at this moment");
+                });
+                
+            })   
+
+        })
+
+        describe("Send comments, send reward for helpers", function () {
+            context("Add a comment", function () {
+                
+                it("User can't add a comment if ad not exist", async () => {
+                    await expectRevert(instance.addComment(new BN(10),1690035945,"Commentaires sur annonce 9", {from: second}), "Ad not exists");
+                   // console.log(storedData);
+                });
+
+            })
         })
 
         

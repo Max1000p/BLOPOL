@@ -32,7 +32,7 @@ async function main() {
     const balanceBlopol = instanceToken.balanceOf(blopolAddress); // Ne fonctionne pas > Natif a l ERC20
     console.log('Balance token blopol in smart contract ' + balanceBlopol.toString());
     // Set rate for staking 10 000 (7Days / 10000000000000000000)
-    await instance.notifyRewardAmount(100000000000000);
+    await instance.notifyRewardAmount(1000000000000000);
     // Category management - Start idCat to 0
     await instance.addCategory("MONTRES");
     await instance.addCategory("TELEPHONES");
