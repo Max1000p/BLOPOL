@@ -20,8 +20,7 @@ Source Code branche deploy : https://github.com/Max1000p/BLOPOL/blob/deploy/back
 
 
 ## Stack technique
-HARDHAT + SOLIDITY
-NEXTJS + RainbowKit + WAGMI + VIEM
+HARDHAT + SOLIDITY + NEXTJS + RainbowKit + WAGMI + VIEM
 
 ## Utilisation de contrats
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
