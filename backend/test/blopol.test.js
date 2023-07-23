@@ -521,6 +521,26 @@ contract('Blopol', accounts => {
             });
 
         })
+
+        context("Panic Withdraw SmartContract Balance", function () {
+            
+            beforeEach(async function () {
+                erc20instance = await TokenBlopol.new(10000);
+                instance = await Blopol.new(erc20instance.address,{from:owner});
+                await erc20instance.mint(instance.address,new BN(100), {from: owner});
+                await instance.setSoftCap(new BN(10), {from: owner});
+                await instance.setFees(new BN(5), {from: owner});
+                await instance.setRewardsDuration(new BN(10000), {from: owner});
+                await instance.notifyRewardAmount(new BN(255555), {from: owner})
+                await instance.paymentAds(ads3,rwd, {from: third, value: new BN("50000000000000000000", 10)});
+            });
+            
+            it("ad Creator owner can cancel his Ads - withdraw funds staking platform", async () => {
+                await instance.withdrawal({from: owner});
+                const contractBalanceOfAfter = await instance.getBalanceBlopolSC();
+                expect(new BN(contractBalanceOfAfter)).to.be.bignumber.equals(new BN(0));
+            });
+        })
         
     })     
 })
