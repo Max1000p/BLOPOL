@@ -227,7 +227,7 @@ const MesAnnonces = () => {
 
             toast({
                 title: 'Remboursement',
-                description: `Votre compte vient d'être crédité de voter montant à débloquer`,
+                description: `Votre compte vient d'être crédité de votre montant à débloquer`,
                 status: 'success',
                 duration: 3000,
                 position: 'top',

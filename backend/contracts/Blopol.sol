@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -492,10 +490,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     function _calcWithdrawAmountPossible(uint _idAd) private view returns(uint){
         uint rate = _percentAuthorizeWithdrawByAd(_idAd) * 10**18;
         if (rate > 0){
-            uint rw = rwd[_idAd].amountReward;
-            uint amr = rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate);
-            uint sfc = (_softCap * (10**18 / priceFeed()) * (10**8));
-            
             if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * (10**18 / priceFeed()) * (10**8))){
                 return 0; 
             } else { 
@@ -668,6 +662,11 @@ contract Blopol is Ownable, ReentrancyGuard {
         require(address(this).balance > 0, "No cash in SmartContract");
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success);
+    }
+
+    /// @notice Check Balance of contract
+    function getBalanceBlopolSC() external onlyOwner view returns(uint){
+        return address(this).balance;
     }
 
      /// @dev Special admin to test range and percentage / withDraw function
