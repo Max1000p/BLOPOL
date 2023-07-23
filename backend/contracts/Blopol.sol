@@ -159,13 +159,8 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @param  _idAd identifier Ads
     /// @return deposit date of Ads
     function _getAdsDepositDate(uint _idAd) private view returns(uint){
-        console.log('_getdeposfunction');
-        console.log(_idAd);
         for (uint i = 0; i < adsArray.length; i++) {
-            console.log(adsArray[i].idAds);
             if (adsArray[i].idAds == _idAd) {
-                
-                console.log(adsArray[i].depositAds);
                 return adsArray[i].depositAds;
             }
         }
@@ -271,8 +266,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     function giveRewardComment(uint _idAd, uint _index) external checkAdsRecord(_idAd) payable nonReentrant{
         uint amount = _calculRewardForAd(_idAd);
         require(rwd[_idAd].amountReward > 0, "Reward already send");
-        require(stakingtokens[msg.sender][_idAd].amount >= amount, "not enough funds");
-        require(amount > 0, "not possible");
         comments[_idAd][_index].flag = true;
 
         stakingtokens[msg.sender][_idAd].amount -= amount;
@@ -335,8 +328,6 @@ contract Blopol is Ownable, ReentrancyGuard {
 
         _createAds(counterId,ads.depositAds, ads.titleAds, ads.idcatAds, ads.geolocAds);
         _addRewardAds(counterId, rewardStaking);
-        console.log('Ads number payment');
-        console.log(counterId);
         StakingToken storage data = stakingtokens[msg.sender][counterId];
         if (data.walletAdAddress == address(0)){
              data.walletAdAddress = msg.sender;
@@ -382,9 +373,6 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @param _idAd Identifier Ad
     /// return amount staked by Ads
     function getBalanceStakingTokenByAds(uint _idAd) checkAdsRecord(_idAd) external view returns(uint){
-        console.log('----------------');
-        console.log(msg.sender);
-        console.log(_idAd);
         return stakingtokens[msg.sender][_idAd].amount;
     }
 
@@ -502,23 +490,13 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice depend range and SoftCap
     /// @return amount withdraw if criteria time and sofcap are good
     function _calcWithdrawAmountPossible(uint _idAd) private view returns(uint){
-        console.log("rentre dans la fonction");
         uint rate = _percentAuthorizeWithdrawByAd(_idAd) * 10**18;
-        console.log(rate);
         if (rate > 0){
             uint rw = rwd[_idAd].amountReward;
             uint amr = rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate);
             uint sfc = (_softCap * (10**18 / priceFeed()) * (10**8));
-            console.log('reward montant');
-            console.log(rw);
-            console.log('calcul retrait reward avec %');
-            console.log(amr);
-            console.log('Valeur du Softcap');
-            console.log(sfc);
             
             if ((rwd[_idAd].amountReward - _calculatePercentage(rwd[_idAd].amountReward,rate) ) <  (_softCap * (10**18 / priceFeed()) * (10**8))){
-                
-                
                 return 0; 
             } else { 
                 return _calculatePercentage(rwd[_idAd].amountReward,rate); 
@@ -566,18 +544,17 @@ contract Blopol is Ownable, ReentrancyGuard {
     /// @notice Delete an Ads, delete all data for this Ads
     /// @dev TODO remove all entry to clean storage
     function cancelMyAds(uint _idAd) external payable checkAdsRecord(_idAd) nonReentrant{
-        require(stakingtokens[msg.sender][_idAd].amount >= 0, "no funds to Withdraw");
         uint amount = stakingtokens[msg.sender][_idAd].amount;
-       
-        if(stakingtokens[msg.sender][_idAd].amount > 0){
-            (bool success, ) = msg.sender.call{value: amount}("");
-            require(success);
-        }
-
+        
         stakingtokens[msg.sender][_idAd].amount -= amount;
         totalSupply -= amount;
         rwd[_idAd].amountReward = 0;
         
+        if(amount > 0){
+            (bool success, ) = msg.sender.call{value: amount}("");
+            require(success);
+        }
+
         delete adsArray[_idAd];
         emit CancelAdd(_idAd, msg.sender, amount);
     }
