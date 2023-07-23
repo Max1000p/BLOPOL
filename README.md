@@ -6,6 +6,7 @@
 POC - Fonctionnalités dévelopées : 
 
 - Connexion avec l'oracle Chainlink pour le calcul du SoftCap de l'application
+
 <https://blopol-app-2023.vercel.app/>
 
 - Dépot d'une annonce
