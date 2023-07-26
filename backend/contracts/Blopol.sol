@@ -393,8 +393,6 @@ contract Blopol is Ownable, ReentrancyGuard {
        return BokkyPooBahsDateTimeLibrary.diffDays(_from,block.timestamp);
     } 
 
-
-
     /// @notice Give authorized withdraw percent with last withdraw and date now in range
     /// @param _idAd Identifier Ads
     /// @return percentage
