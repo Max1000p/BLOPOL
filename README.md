@@ -35,7 +35,7 @@ yarn hardhat run ./scripts/02_interact.js --network localhost
 ## Stack technique
 HARDHAT + SOLIDITY + NEXTJS + RainbowKit + WAGMI + VIEM
 
-## Utilisation de contrats
+## Utilisation des contrats et librairies externes
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
