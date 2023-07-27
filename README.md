@@ -37,15 +37,19 @@ HARDHAT + SOLIDITY + NEXTJS + RainbowKit + WAGMI + VIEM
 
 ## Utilisation de contrats
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "https://github.com/bokkypoobah/BokkyPooBahsDateTimeLibrary/blob/master/contracts/BokkyPooBahsDateTimeLibrary.sol";
 
 
 ## Run tests
 Control function, expect, event, and revert
-59 passing (3s)
+60 passing
 
 ```sh
 yarn hardhat test
